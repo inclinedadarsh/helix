@@ -32,11 +32,3 @@ def transcribe_media(path: str, response_format: str = "text") -> str:
     if isinstance(resp, str):
         return resp
     return getattr(resp, "text", str(resp))
-
-
-if __name__ == "__main__":
-    print(
-        transcribe_media(
-            "test-media-files/New MIT study says most AI projects are doomed....mp3"
-        )
-    )
