@@ -1,4 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks
+import os
+import json
 import uuid
 import logging
 from .utils import FirestoreHelper, ProcessHelper
@@ -79,4 +81,34 @@ def get_recent_processes():
     return {"processes": processes}
 
 
-# TODO: Add a route to get all files (processed and processing)
+@app.get("/files/processed")
+def get_processed_files():
+    base_dir = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "uploads", "processed"
+    )
+
+    categories = {
+        "docs": [],
+        "links": [],
+        "media": [],
+    }
+
+    for category in categories.keys():
+        category_dir = os.path.join(base_dir, category)
+        if not os.path.isdir(category_dir):
+            continue
+        try:
+            for entry in os.listdir(category_dir):
+                if entry.endswith(".meta"):
+                    meta_path = os.path.join(category_dir, entry)
+                    try:
+                        with open(meta_path, "r") as f:
+                            data = json.load(f)
+                            categories[category].append(data)
+                    except Exception:
+                        # Skip unreadable/bad JSON meta files
+                        continue
+        except FileNotFoundError:
+            continue
+
+    return categories
