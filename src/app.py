@@ -183,3 +183,9 @@ async def upload(
     )
 
     return {"message": "saved!", "process_id": process_id}
+
+
+# TODO: Implement cerebras file renaming
+# TODO: Add a route to get the status of a process
+# TODO: Add a route to get all processes
+# TODO: Add a route to get all files (processed and processing)

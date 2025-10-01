@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "cerebras-cloud-sdk>=1.50.1",
     "fastapi>=0.118.0",
     "google-cloud-firestore>=2.21.0",
     "markitdown[all]>=0.1.3",
