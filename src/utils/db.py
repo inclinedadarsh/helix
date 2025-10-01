@@ -57,3 +57,18 @@ class FirestoreHelper:
                 "status": {"type": "completed", "message": ""},
             }
         )
+
+    def get_latest_processes(self, limit: int = 5):
+        query = (
+            self.db.collection("processes")
+            .order_by("created_at", direction=firestore.Query.DESCENDING)
+            .limit(limit)
+        )
+        results = []
+        for doc in query.stream():
+            data = doc.to_dict()
+            # Ensure the document id is present and consistent
+            if "id" not in data:
+                data["id"] = doc.id
+            results.append(data)
+        return results

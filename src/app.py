@@ -73,6 +73,10 @@ async def process_urls(background_tasks: BackgroundTasks, request: ProcessUrlReq
     return {"message": "saved!", "process_id": process_id}
 
 
-# TODO: Add a route to get the status of a process
-# TODO: Add a route to get all processes
+@app.get("/processes/recent")
+def get_recent_processes():
+    processes = db.get_latest_processes(limit=5)
+    return {"processes": processes}
+
+
 # TODO: Add a route to get all files (processed and processing)
