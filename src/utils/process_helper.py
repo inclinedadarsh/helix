@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
+import json
 import shutil
 from pathlib import Path
 from typing import List
 
 from fastapi import UploadFile
 
+from .ai import AIHelper
 from .db import FirestoreHelper
 from . import transcribe_media, process_file as convert_file
 
@@ -29,20 +31,70 @@ class ProcessHelper:
         self._uploads_dir.mkdir(parents=True, exist_ok=True)
         self._processing_dir.mkdir(parents=True, exist_ok=True)
         self._processed_dir.mkdir(parents=True, exist_ok=True)
+        # Subdirectories inside processed output
+        self._processed_media_dir = self._processed_dir / "media"
+        self._processed_docs_dir = self._processed_dir / "docs"
+        self._processed_media_dir.mkdir(parents=True, exist_ok=True)
+        self._processed_docs_dir.mkdir(parents=True, exist_ok=True)
 
         self._media_extensions = {"mp4", "mp3"}
+
+        self.ai_helper = AIHelper()
 
     def _truncate(self, text: str, limit: int = 2000) -> str:
         if not isinstance(text, str):
             return ""
         return text[:limit]
 
-    def _move_to_processed(self, src_path: Path, process_id: str, index: int) -> str:
+    def _sanitize_base_name(self, name: str) -> str:
+        sanitized = "".join(
+            c if (c.isalnum() or c == "_") else "_" for c in (name or "").strip()
+        ).strip("_")
+        return sanitized or "file"
+
+    def _move_and_rename_with_meta(
+        self,
+        src_path: Path,
+        base_name: str,
+        original_name: str,
+        summary: str,
+        tags: List[str],
+    ) -> str:
+        # Ensure base name is sanitized and unique alongside .meta
+        base_name = self._sanitize_base_name(base_name)
         ext = src_path.suffix
-        new_name = f"{process_id}-{index}{ext}"
-        dst_path = self._processed_dir / new_name
-        shutil.move(str(src_path), str(dst_path))
-        return new_name
+        ext_no_dot = ext.lstrip(".").lower()
+        # Choose destination root based on media vs docs
+        dest_root = (
+            self._processed_media_dir
+            if ext_no_dot in self._media_extensions
+            else self._processed_docs_dir
+        )
+        candidate_base = base_name
+        counter = 1
+        while True:
+            file_dest = dest_root / f"{candidate_base}{ext}"
+            meta_dest = dest_root / f"{candidate_base}.meta"
+            if not file_dest.exists() and not meta_dest.exists():
+                break
+            candidate_base = f"{base_name}-{counter}"
+            counter += 1
+
+        # Move/rename the actual file
+        shutil.move(str(src_path), str(file_dest))
+
+        # Write the .meta JSON file
+        meta_payload = {
+            "old_name": original_name,
+            "name": candidate_base,
+            "summary": summary,
+            "tags": tags or [],
+        }
+        with meta_dest.open("w", encoding="utf-8") as f:
+            json.dump(meta_payload, f, ensure_ascii=False, indent=2)
+
+        # Return path relative to processed dir so callers can locate it
+        return str(file_dest.relative_to(self._processed_dir))
 
     def _update_status(self, process_id: str, message: str) -> None:
         self.db.update_process_document(process_id, "processing", message)
@@ -90,9 +142,13 @@ class ProcessHelper:
                 else:
                     text = convert_file(str(path))
 
-                _ = self._truncate(text, 1000)
+                content = self._truncate(text, 2000)
 
-                new_name = self._move_to_processed(path, process_id, idx)
+                name, summary, tags = self.ai_helper.get_analyzed_file_data(content)
+
+                new_name = self._move_and_rename_with_meta(
+                    path, name, original_name, summary, tags
+                )
                 self._update_tuple_with_new_name(process_id, original_name, new_name)
                 logger.info(
                     f"File {original_name} processed and moved to {new_name}",
