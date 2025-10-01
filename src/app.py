@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, BackgroundTasks
 import uuid
 import logging
 from .utils import FirestoreHelper, ProcessHelper
+from .schema import ProcessUrlRequest
 
 app = FastAPI()
 db = FirestoreHelper()
@@ -41,6 +42,32 @@ async def upload(
     )
     logger.info(
         f"Background task scheduled {process_id}", extra={"process_id": process_id}
+    )
+
+    return {"message": "saved!", "process_id": process_id}
+
+
+@app.post("/process-urls")
+async def process_urls(background_tasks: BackgroundTasks, request: ProcessUrlRequest):
+    process_id = uuid.uuid4().hex
+    logger.info(
+        f"URL list received; starting process {process_id}",
+        extra={"process_id": process_id, "num_urls": len(request.urls)},
+    )
+
+    db.create_process_document(process_id, request.urls)
+    logger.info(
+        f"Firestore process document created {process_id}",
+        extra={"process_id": process_id},
+    )
+
+    process_helper = ProcessHelper(db)
+    background_tasks.add_task(
+        process_helper.process_links_background, process_id, request.urls
+    )
+    logger.info(
+        f"Background URL processing scheduled {process_id}",
+        extra={"process_id": process_id},
     )
 
     return {"message": "saved!", "process_id": process_id}

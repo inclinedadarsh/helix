@@ -11,6 +11,7 @@ from fastapi import UploadFile
 from .ai import AIHelper
 from .db import FirestoreHelper
 from . import transcribe_media, process_file as convert_file
+from .url_helper import url_to_markdown
 
 
 logger = logging.getLogger(__name__)
@@ -34,8 +35,10 @@ class ProcessHelper:
         # Subdirectories inside processed output
         self._processed_media_dir = self._processed_dir / "media"
         self._processed_docs_dir = self._processed_dir / "docs"
+        self._processed_links_dir = self._processed_dir / "links"
         self._processed_media_dir.mkdir(parents=True, exist_ok=True)
         self._processed_docs_dir.mkdir(parents=True, exist_ok=True)
+        self._processed_links_dir.mkdir(parents=True, exist_ok=True)
 
         self._media_extensions = {"mp4", "mp3"}
 
@@ -95,6 +98,32 @@ class ProcessHelper:
 
         # Return path relative to processed dir so callers can locate it
         return str(file_dest.relative_to(self._processed_dir))
+
+    def _write_link_meta(
+        self, base_name: str, original_url: str, summary: str, tags: List[str]
+    ) -> str:
+        # Ensure base name is sanitized and unique alongside .meta in links dir
+        base_name = self._sanitize_base_name(base_name)
+        candidate_base = base_name or "link"
+        counter = 1
+        while True:
+            meta_dest = self._processed_links_dir / f"{candidate_base}.meta"
+            if not meta_dest.exists():
+                break
+            candidate_base = f"{base_name}-{counter}"
+            counter += 1
+
+        meta_payload = {
+            "old_name": original_url,
+            "name": candidate_base,
+            "summary": summary,
+            "tags": tags or [],
+        }
+        with meta_dest.open("w", encoding="utf-8") as f:
+            json.dump(meta_payload, f, ensure_ascii=False, indent=2)
+
+        # Return path relative to processed dir so callers can locate it
+        return str(meta_dest.relative_to(self._processed_dir))
 
     def _update_status(self, process_id: str, message: str) -> None:
         self.db.update_process_document(process_id, "processing", message)
@@ -173,5 +202,57 @@ class ProcessHelper:
         self.db.finish_process(process_id)
         logger.info(
             f"Background processing completed {process_id}",
+            extra={"process_id": process_id},
+        )
+
+    def process_links_background(self, process_id: str, urls: List[str]) -> None:
+        logger.info(
+            "Background URL processing started",
+            extra={"process_id": process_id, "url_count": len(urls)},
+        )
+
+        for idx, url in enumerate(urls, start=1):
+            try:
+                logger.info(
+                    f"Processing URL {url}",
+                    extra={
+                        "process_id": process_id,
+                        "url": url,
+                        "index": idx,
+                    },
+                )
+                self._update_status(process_id, f"Fetching and analyzing the URL {url}")
+
+                markdown = url_to_markdown(url)
+                content = self._truncate(markdown, 2000)
+
+                name, summary, tags = self.ai_helper.get_analyzed_file_data(content)
+
+                new_name = self._write_link_meta(name, url, summary, tags)
+                self._update_tuple_with_new_name(process_id, url, new_name)
+
+                logger.info(
+                    f"URL processed and meta written to {new_name}",
+                    extra={
+                        "process_id": process_id,
+                        "old_name": url,
+                        "new_name": new_name,
+                        "index": idx,
+                    },
+                )
+            except Exception:
+                logger.exception(
+                    f"Error processing URL {url}",
+                    extra={
+                        "process_id": process_id,
+                        "url": url,
+                        "index": idx,
+                    },
+                )
+                continue
+
+        self.db.finish_process(process_id)
+        logger.info(
+            f"Background URL processing completed {process_id}",
             extra={"process_id": process_id},
         )

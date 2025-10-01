@@ -2,5 +2,12 @@ from .media_helper import transcribe_media
 from .file_helper import process_file
 from .db import FirestoreHelper
 from .process_helper import ProcessHelper
+from .url_helper import url_to_markdown
 
-__all__ = ["transcribe_media", "process_file", "FirestoreHelper", "ProcessHelper"]
+__all__ = [
+    "transcribe_media",
+    "process_file",
+    "FirestoreHelper",
+    "ProcessHelper",
+    "url_to_markdown",
+]
