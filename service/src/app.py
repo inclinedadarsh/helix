@@ -5,9 +5,24 @@ import uuid
 import logging
 from .utils import FirestoreHelper, ProcessHelper
 from .schema import ProcessUrlRequest
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 db = FirestoreHelper()
+
+origins = [
+    "chrome-extension://fdddbngpmldmfgbepjoimbbfghjeejfm"  # your extension ID
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,       # safer than ["*"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+
 
 # Logger
 logger = logging.getLogger(__name__)
