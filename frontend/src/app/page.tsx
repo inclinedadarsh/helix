@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DotPattern } from "@/components/ui/dot-pattern";
@@ -24,10 +24,14 @@ export default function Home() {
           href="#"
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-gradient-to-b from-white to-gray-100 flex gap-2 mb-16 border border-border rounded-lg px-2 py-1 text-sm items-center z-10 shadow-sm hover:bg-gray-50 transition-colors"
+          className="bg-gradient-to-b from-white to-gray-100 flex gap-2 mb-16 border border-border rounded-lg px-2 py-1 text-sm items-center z-10 shadow-sm hover:bg-gray-50 transition-colors group"
         >
           🎉 <Separator orientation="vertical" className="" /> Checkout demo
-          video <ArrowUpRight size={16} />
+          video{" "}
+          <ChevronRight
+            size={16}
+            className="group-hover:translate-x-1 transition-transform"
+          />
         </Link>
         <h1 className="text-7xl font-bold z-10">
           <span className="bg-gradient-to-br from-blue-500 to-blue-700 pl-4 pr-1 py-2 rounded-lg text-white shadow-lg">
