@@ -7,6 +7,7 @@ import { DotPattern } from "@/components/ui/dot-pattern";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/navbar";
+import { HelixSupportSystem } from "@/components/shiny";
 
 export default function Home() {
   return (
@@ -48,6 +49,8 @@ export default function Home() {
           Try it out <ArrowUpRight />
         </Link>
       </header>
+      <HelixSupportSystem />
+      <div className="h-[400px]"></div>
     </main>
   );
 }
