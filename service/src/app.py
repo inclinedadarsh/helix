@@ -11,7 +11,7 @@ app = FastAPI()
 db = FirestoreHelper()
 
 origins = [
-    "chrome-extension://fdddbngpmldmfgbepjoimbbfghjeejfm"  # your extension ID
+    "*" 
 ]
 app.add_middleware(
     CORSMiddleware,
