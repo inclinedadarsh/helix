@@ -1,27 +1,25 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi.responses import FileResponse
 import os
 import json
 import uuid
 import logging
+import glob
 from .utils import FirestoreHelper, ProcessHelper
-from .schema import ProcessUrlRequest
+from .schema import ProcessUrlRequest, DownloadFileRequest
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 db = FirestoreHelper()
 
-origins = [
-    "*" 
-]
+origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,       # safer than ["*"]
+    allow_origins=origins,  # safer than ["*"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 
 
 # Logger
@@ -127,3 +125,58 @@ def get_processed_files():
             continue
 
     return categories
+
+
+@app.post("/download")
+async def download_file(request: DownloadFileRequest):
+    """
+    Download a file by name and type.
+    Request body should contain:
+    - file_name: name of the file without extension
+    - file_type: either "docs" or "media"
+    """
+    base_dir = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "uploads", "processed"
+    )
+
+    # Validate file type
+    if request.file_type not in ["docs", "media"]:
+        raise HTTPException(
+            status_code=400, detail="file_type must be either 'docs' or 'media'"
+        )
+
+    # Construct the search directory
+    search_dir = os.path.join(base_dir, request.file_type)
+
+    if not os.path.isdir(search_dir):
+        raise HTTPException(
+            status_code=404, detail=f"No {request.file_type} directory found"
+        )
+
+    # Search for files with the given name (without extension)
+    # Look for any file that starts with the given name
+    pattern = os.path.join(search_dir, f"{request.file_name}.*")
+    matching_files = glob.glob(pattern)
+
+    # Filter out .meta files
+    matching_files = [f for f in matching_files if not f.endswith(".meta")]
+
+    if not matching_files:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No file found with name '{request.file_name}' in {request.file_type} directory",
+        )
+
+    # If multiple files match, take the first one
+    file_path = matching_files[0]
+
+    # Get the original filename for the download
+    original_filename = os.path.basename(file_path)
+
+    logger.info(f"Downloading file: {file_path}")
+
+    return FileResponse(
+        path=file_path,
+        filename=original_filename,
+        media_type="application/octet-stream",
+    )
