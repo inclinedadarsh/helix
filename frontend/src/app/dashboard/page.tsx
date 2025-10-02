@@ -146,6 +146,7 @@ export default function Dashboard() {
   const [data, setData] = React.useState<FilesResponse | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
+  const [downloading, setDownloading] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -161,6 +162,54 @@ export default function Dashboard() {
       setLoading(false);
     }
   }, []);
+
+  const downloadFile = React.useCallback(
+    async (fileName: string, fileType: "docs" | "media") => {
+      setDownloading(fileName);
+      try {
+        const res = await fetch("/api/download", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            file_name: fileName,
+            file_type: fileType,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to download file");
+        }
+
+        // Get the filename from the Content-Disposition header or use the original name
+        const contentDisposition = res.headers.get("content-disposition");
+        let downloadFileName = fileName;
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+          if (filenameMatch) {
+            downloadFileName = filenameMatch[1];
+          }
+        }
+
+        // Create a blob from the response and trigger download
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = downloadFileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (e) {
+        setError((e as Error).message || "Failed to download file");
+      } finally {
+        setDownloading(null);
+      }
+    },
+    [],
+  );
 
   React.useEffect(() => {
     void load();
@@ -252,9 +301,14 @@ export default function Dashboard() {
                       <div className="mt-auto flex gap-2">
                         <button
                           type="button"
+                          onClick={() => downloadFile(doc.name, "docs")}
+                          disabled={downloading === doc.name}
                           className={cn(buttonVariants({ variant: "default" }))}
                         >
-                          <Download className="size-4 mr-1" /> Download
+                          <Download className="size-4 mr-1" />
+                          {downloading === doc.name
+                            ? "Downloading..."
+                            : "Download"}
                         </button>
                       </div>
                     </div>
@@ -300,9 +354,14 @@ export default function Dashboard() {
                       <div className="mt-auto flex gap-2">
                         <button
                           type="button"
+                          onClick={() => downloadFile(m.name, "media")}
+                          disabled={downloading === m.name}
                           className={cn(buttonVariants({ variant: "default" }))}
                         >
-                          <Download className="size-4 mr-1" /> Download
+                          <Download className="size-4 mr-1" />
+                          {downloading === m.name
+                            ? "Downloading..."
+                            : "Download"}
                         </button>
                       </div>
                     </div>
