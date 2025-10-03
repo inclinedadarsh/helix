@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 db = FirestoreHelper()
 
+
 origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
