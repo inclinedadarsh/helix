@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAuthHeaders } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -24,9 +25,13 @@ export async function POST(request: Request) {
       backendFormData.append("files", file);
     });
 
+    // Get auth headers for backend (without Content-Type for FormData)
+    const headers = await getAuthHeaders({}, false);
+
     // Send to backend
     const response = await fetch("http://localhost:8000/upload", {
       method: "POST",
+      headers,
       body: backendFormData,
     });
 
