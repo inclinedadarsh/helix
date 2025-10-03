@@ -11,7 +11,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
-import { helixLogoMarkWhite, batman } from "@/assets";
+import { helixLogoMarkWhite } from "@/assets";
+import { UserButton } from "@clerk/nextjs";
 
 const sidebarItems = [
   {
@@ -72,12 +73,8 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex items-center gap-2 p-2 rounded-md bg-sidebar-accent border border-sidebar-border">
-          <Image src={batman} alt="Batman" className="w-10 rounded-lg" />
-          <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-semibold">Batman</span>
-            <span className="text-sm">batman@hotmail.com</span>
-          </div>
+        <div className="w-full bg-white p-2 rounded-md border border-border hover:bg-transparent transition-colors">
+          <UserButton showName />
         </div>
       </SidebarFooter>
     </Sidebar>
