@@ -32,6 +32,12 @@ def detect_url_type(url):
     
 
 def process_linkedin_url(url):
+    is_post = any(path in url for path in ["/posts/", "/feed/update/"])
+    is_doc = any(path in url for path in ["/help/", "/business/"])
+
+    if not is_post and is_doc:
+        print(f"INFO: LinkedIn URL looks like documentation. Treating as web content.")
+        return process_web_url(url)
     try:
         html = fetch_with_requests(url)
         if html.startswith("Error:"):
@@ -51,10 +57,10 @@ def process_linkedin_url(url):
         return f"Error processing LinkedIn URL: {e}"
     
 def process_reddit_url(url: str) -> str:
-    """
-    Extract title, body, and metadata from a Reddit post URL.
-    Tries JSON API first, then falls back to HTML scraping.
-    """
+    if "/comments/" not in url:
+        print(f"INFO: Reddit URL is not a post (missing '/comments/'). Treating as web content.")
+        return process_web_url(url)
+    
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -191,6 +197,10 @@ def process_wikipedia_url(url):
         return f"Error processing Wikipedia URL: {type(e).__name__} - {e}"
     
 def process_x_url(url):
+    if "/status/" not in url:
+        print(f"INFO: X URL is not a post (missing '/status/'). Treating as web content.")
+        return process_web_url(url)
+    
     if not BEARER_TOKEN:
         return "Error: X API key not found. Ensure 'BEARER_TOKEN' is set in your .env file and loaded correctly."
         
