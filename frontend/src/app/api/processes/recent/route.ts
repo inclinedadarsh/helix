@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
+import { getAuthHeaders } from "@/lib/auth";
 
 export async function GET() {
   try {
+    // Get auth headers for backend
+    const headers = await getAuthHeaders();
+
     const response = await fetch("http://localhost:8000/processes/recent", {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     if (!response.ok) {
