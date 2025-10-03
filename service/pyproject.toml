@@ -17,6 +17,8 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "python-multipart>=0.0.20",
     "requests>=2.32.5",
+    "tweepy>=4.16.0",
     "uvicorn>=0.37.0",
+    "wikipedia>=1.4.0",
     "youtube-transcript-api>=1.0.3",
 ]
