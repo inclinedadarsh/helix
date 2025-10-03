@@ -1,13 +1,14 @@
 "use client";
 
 import { ArrowUpRight, ChevronRight } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/navbar";
 import { HelixSupportSystem } from "@/components/shiny";
+import { SignedIn, SignedOut, SignUpButton } from "@clerk/nextjs";
 
 export default function Home() {
   return (
@@ -43,15 +44,30 @@ export default function Home() {
           Drop your files and links, and your LLM will never lose context. Some
           Drop your files and links, and your LLM will never lose context.
         </p>
-        <Link
-          href="/dashboard"
-          className={cn(
-            buttonVariants({ variant: "default", size: "lg" }),
-            "font-bold mt-10 z-10 uppercase font-mono tracking-wide text-base",
-          )}
-        >
-          Try it out <ArrowUpRight />
-        </Link>
+        <SignedOut>
+          <SignUpButton mode="modal">
+            <Button
+              className={cn(
+                "font-bold mt-10 z-10 uppercase font-mono tracking-wide text-base cursor-pointer",
+              )}
+              variant="default"
+              size="lg"
+            >
+              Create Account <ArrowUpRight />
+            </Button>
+          </SignUpButton>
+        </SignedOut>
+        <SignedIn>
+          <Link
+            href="/dashboard"
+            className={cn(
+              buttonVariants({ variant: "default", size: "lg" }),
+              "font-bold mt-10 z-10 uppercase font-mono tracking-wide text-base",
+            )}
+          >
+            Dashboard <ArrowUpRight />
+          </Link>
+        </SignedIn>
       </header>
       <HelixSupportSystem />
       <div className="h-[400px]"></div>

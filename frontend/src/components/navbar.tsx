@@ -1,9 +1,17 @@
 import { helixLogo } from "@/assets";
 import { cn } from "@/lib/utils";
-import { Github } from "lucide-react";
+import { SiGithub } from "@icons-pack/react-simple-icons";
 import Image from "next/image";
 import Link from "next/link";
-import { buttonVariants } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
+import { Blocks } from "lucide-react";
 
 const Navbar = () => {
   return (
@@ -17,17 +25,52 @@ const Navbar = () => {
             "font-bold uppercase font-mono tracking-wide",
           )}
         >
-          <Github /> GitHub
+          <Blocks /> Install Extension
         </Link>
         <Link
-          href="/dashboard"
+          href="/"
           className={cn(
-            buttonVariants({ variant: "default" }),
+            buttonVariants({ variant: "outline" }),
             "font-bold uppercase font-mono tracking-wide",
           )}
         >
-          Try it out
+          <SiGithub /> GitHub
         </Link>
+        <SignedOut>
+          <SignInButton mode="modal">
+            <Button
+              className={cn(
+                "font-bold uppercase font-mono tracking-wide cursor-pointer",
+              )}
+              variant="outline"
+            >
+              Login
+            </Button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <Button
+              className={cn(
+                "font-bold uppercase font-mono tracking-wide cursor-pointer",
+              )}
+              variant="default"
+            >
+              Create Account
+            </Button>
+          </SignUpButton>
+        </SignedOut>
+        <SignedIn>
+          <Link href="/dashboard">
+            <Button
+              className={cn(
+                "font-bold uppercase font-mono tracking-wide cursor-pointer",
+              )}
+              variant="default"
+            >
+              Dashboard
+            </Button>
+          </Link>
+          <UserButton />
+        </SignedIn>
       </div>
     </nav>
   );
