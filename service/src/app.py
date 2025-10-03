@@ -1,16 +1,17 @@
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException, Depends
 from fastapi.responses import FileResponse
 import os
 import json
 import uuid
 import logging
 import glob
-from .utils import FirestoreHelper, ProcessHelper
+from .utils import FirestoreHelper, ProcessHelper, ClerkHelper
 from .schema import ProcessUrlRequest, DownloadFileRequest
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 db = FirestoreHelper()
+clerk = ClerkHelper()
 
 
 origins = ["*"]
@@ -38,7 +39,9 @@ def health():
 
 @app.post("/upload")
 async def upload(
-    background_tasks: BackgroundTasks, files: list[UploadFile] = File(..., max_items=10)
+    background_tasks: BackgroundTasks,
+    files: list[UploadFile] = File(..., max_items=10),
+    current_user: str = Depends(clerk.get_clerk_payload),
 ):
     process_id = uuid.uuid4().hex
     logger.info(
@@ -46,7 +49,9 @@ async def upload(
         extra={"process_id": process_id, "num_files": len(files)},
     )
 
-    db.create_process_document(process_id, [file.filename for file in files])
+    db.create_process_document(
+        process_id, [file.filename for file in files], current_user
+    )
     logger.info(
         f"Firestore process document created {process_id}",
         extra={"process_id": process_id},
@@ -54,7 +59,7 @@ async def upload(
 
     process_helper = ProcessHelper(db)
     background_tasks.add_task(
-        process_helper.process_files_background, process_id, files
+        process_helper.process_files_background, process_id, current_user, files
     )
     logger.info(
         f"Background task scheduled {process_id}", extra={"process_id": process_id}
@@ -64,14 +69,18 @@ async def upload(
 
 
 @app.post("/process-urls")
-async def process_urls(background_tasks: BackgroundTasks, request: ProcessUrlRequest):
+async def process_urls(
+    background_tasks: BackgroundTasks,
+    request: ProcessUrlRequest,
+    current_user: str = Depends(clerk.get_clerk_payload),
+):
     process_id = uuid.uuid4().hex
     logger.info(
         f"URL list received; starting process {process_id}",
         extra={"process_id": process_id, "num_urls": len(request.urls)},
     )
 
-    db.create_process_document(process_id, request.urls)
+    db.create_process_document(process_id, request.urls, current_user)
     logger.info(
         f"Firestore process document created {process_id}",
         extra={"process_id": process_id},
@@ -79,7 +88,7 @@ async def process_urls(background_tasks: BackgroundTasks, request: ProcessUrlReq
 
     process_helper = ProcessHelper(db)
     background_tasks.add_task(
-        process_helper.process_links_background, process_id, request.urls
+        process_helper.process_links_background, process_id, current_user, request.urls
     )
     logger.info(
         f"Background URL processing scheduled {process_id}",
@@ -90,15 +99,15 @@ async def process_urls(background_tasks: BackgroundTasks, request: ProcessUrlReq
 
 
 @app.get("/processes/recent")
-def get_recent_processes():
-    processes = db.get_latest_processes(limit=5)
+def get_recent_processes(current_user: str = Depends(clerk.get_clerk_payload)):
+    processes = db.get_latest_processes(current_user, limit=5)
     return {"processes": processes}
 
 
 @app.get("/files/processed")
-def get_processed_files():
+def get_processed_files(current_user: str = Depends(clerk.get_clerk_payload)):
     base_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "uploads", "processed"
+        os.path.dirname(os.path.dirname(__file__)), "uploads", current_user, "processed"
     )
 
     categories = {
@@ -129,7 +138,9 @@ def get_processed_files():
 
 
 @app.post("/download")
-async def download_file(request: DownloadFileRequest):
+async def download_file(
+    request: DownloadFileRequest, current_user: str = Depends(clerk.get_clerk_payload)
+):
     """
     Download a file by name and type.
     Request body should contain:
@@ -137,7 +148,7 @@ async def download_file(request: DownloadFileRequest):
     - file_type: either "docs" or "media"
     """
     base_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "uploads", "processed"
+        os.path.dirname(os.path.dirname(__file__)), "uploads", current_user, "processed"
     )
 
     # Validate file type
