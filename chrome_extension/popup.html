@@ -1,88 +1,189 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Save Page</title>
-    <style>
-      body {
-        width: 300px;
-        padding: 16px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
-        background: #fff;
-        color: #111;
-      }
 
-      .container {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
+<head>
+  <title>Save Page</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      background: #fff;
+      color: #111;
+    }
 
-      h2 {
-        font-size: 16px;
-        font-weight: 600;
-        margin: 0;
-      }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
 
-      .url-preview {
-        background: #f5f5f5;
-        padding: 8px;
-        border-radius: 6px;
-        font-size: 12px;
-        word-break: break-all;
-        max-height: 50px;
-        overflow-y: auto;
-      }
+    h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
 
-      #saveBtn {
-        background: #111;
-        color: #fff;
-        border: none;
-        padding: 10px;
-        border-radius: 6px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background 0.2s ease;
-      }
+    /* Username setup state */
+    .username-setup {
+      display: none;
+    }
 
-      #saveBtn:hover {
-        background: #333;
-      }
+    .username-setup.active {
+      display: block;
+    }
 
-      #saveBtn:active {
-        background: #555;
-      }
+    .username-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
 
-      #saveBtn.loading {
-        opacity: 0.6;
-        cursor: not-allowed;
-      }
+    .username-input:focus {
+      outline: none;
+      border-color: #111;
+    }
 
-      .status {
-        text-align: center;
-        font-size: 12px;
-        min-height: 18px;
-        color: #555;
-      }
+    .save-username-btn {
+      background: #111;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
 
-      .status.success {
-        color: green;
-      }
+    .save-username-btn:hover {
+      background: #333;
+    }
 
-      .status.error {
-        color: red;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
+    .save-username-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Main functionality state */
+    .main-functionality {
+      display: none;
+    }
+
+    .main-functionality.active {
+      display: block;
+    }
+
+    .url-preview {
+      background: #f5f5f5;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      word-break: break-all;
+      max-height: 50px;
+      overflow-y: auto;
+    }
+
+    #saveBtn {
+      background: #111;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    #saveBtn:hover {
+      background: #333;
+    }
+
+    #saveBtn:active {
+      background: #555;
+    }
+
+    #saveBtn.loading {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status {
+      text-align: center;
+      font-size: 12px;
+      min-height: 18px;
+      color: #555;
+    }
+
+    .status.success {
+      color: green;
+    }
+
+    .status.error {
+      color: red;
+    }
+
+    /* Username display at bottom */
+    .username-display {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .username-text {
+      color: #666;
+    }
+
+    .edit-icon {
+      cursor: pointer;
+      color: #666;
+      font-size: 14px;
+      padding: 2px;
+    }
+
+    .edit-icon:hover {
+      color: #111;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Username setup state -->
+    <div class="username-setup" id="usernameSetup">
+      <h2>Setup GitHub Username</h2>
+      <p style="font-size: 12px; color: #666; margin: 0 0 8px 0;">Enter your GitHub username to get started</p>
+      <input type="text" class="username-input" id="usernameInput" placeholder="Enter GitHub username">
+      <button class="save-username-btn" id="saveUsernameBtn">Save Username</button>
+      <div class="status" id="usernameStatus"></div>
+    </div>
+
+    <!-- Main functionality state -->
+    <div class="main-functionality" id="mainFunctionality">
       <h2>Save Page</h2>
       <div class="url-preview" id="urlPreview">Loading...</div>
       <button id="saveBtn">Save</button>
       <div class="status" id="status"></div>
-    </div>
 
-    <!-- external script instead of inline -->
-    <script src="popup.js"></script>
-  </body>
+      <!-- Username display at bottom -->
+      <div class="username-display" id="usernameDisplay">
+        <span class="username-text">Username: <span id="currentUsername"></span></span>
+        <span class="edit-icon" id="editUsernameBtn">✏️</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- external script instead of inline -->
+  <script src="popup.js"></script>
+</body>
+
 </html>

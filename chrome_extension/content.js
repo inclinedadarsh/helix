@@ -87,10 +87,27 @@ function createSaveButton() {
     button.textContent = "Saving...";
     button.style.cursor = "wait";
 
-    const payload = { urls: [window.location.href] };
-
     try {
-      const res = await fetch("http://127.0.0.1:8000/process-urls", {
+      // Get username from storage
+      const result = await chrome.storage.local.get(['githubUsername']);
+      const username = result.githubUsername;
+
+      if (!username) {
+        button.textContent = "No Username";
+        setTimeout(() => {
+          button.textContent = "Save";
+          button.classList.remove("busy");
+          button.style.cursor = "pointer";
+        }, 2000);
+        return;
+      }
+
+      const payload = {
+        link: window.location.href,
+        username: username
+      };
+
+      const res = await fetch("http://127.0.0.1:8000/upload-single-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

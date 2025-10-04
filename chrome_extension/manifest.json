@@ -3,15 +3,25 @@
   "name": "URL Saver",
   "description": "Save URLs to your local server with a beautiful, adaptive interface",
   "version": "2.0",
-  "permissions": ["tabs", "activeTab"],
-  "host_permissions": ["http://127.0.0.1:8000/*"],
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8000/*"
+  ],
   "action": {
     "default_popup": "popup.html"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_end"
     }
   ]
