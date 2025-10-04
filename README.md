@@ -17,7 +17,7 @@
 
 ## Introduction
 
-![Helix Logo](.assets/helix_logo.png) 
+![Helix Logo](./assets/helix_logo.png) 
 
 LLMs are smart, but they forget your context.
 Every prompt feels like starting from zero.
