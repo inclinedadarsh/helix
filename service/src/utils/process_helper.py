@@ -40,13 +40,15 @@ class ProcessHelper:
         user_dir = self._uploads_dir / user_id
         processing_dir = user_dir / "processing"
         processed_dir = user_dir / "processed"
+        original_dir = user_dir / "original"
 
         # Create directories
         user_dir.mkdir(parents=True, exist_ok=True)
         processing_dir.mkdir(parents=True, exist_ok=True)
         processed_dir.mkdir(parents=True, exist_ok=True)
+        original_dir.mkdir(parents=True, exist_ok=True)
 
-        # Subdirectories inside processed output
+        # Subdirectories inside processed output (for metadata only)
         processed_media_dir = processed_dir / "media"
         processed_docs_dir = processed_dir / "docs"
         processed_links_dir = processed_dir / "links"
@@ -55,13 +57,26 @@ class ProcessHelper:
         processed_docs_dir.mkdir(parents=True, exist_ok=True)
         processed_links_dir.mkdir(parents=True, exist_ok=True)
 
+        # Subdirectories inside original output (for actual files)
+        original_media_dir = original_dir / "media"
+        original_docs_dir = original_dir / "docs"
+        original_links_dir = original_dir / "links"
+
+        original_media_dir.mkdir(parents=True, exist_ok=True)
+        original_docs_dir.mkdir(parents=True, exist_ok=True)
+        original_links_dir.mkdir(parents=True, exist_ok=True)
+
         return {
             "user_dir": user_dir,
             "processing_dir": processing_dir,
             "processed_dir": processed_dir,
+            "original_dir": original_dir,
             "processed_media_dir": processed_media_dir,
             "processed_docs_dir": processed_docs_dir,
             "processed_links_dir": processed_links_dir,
+            "original_media_dir": original_media_dir,
+            "original_docs_dir": original_docs_dir,
+            "original_links_dir": original_links_dir,
         }
 
     def _sanitize_base_name(self, name: str) -> str:
@@ -78,31 +93,41 @@ class ProcessHelper:
         summary: str,
         tags: List[str],
         user_dirs: dict,
+        markdown_content: str = None,
     ) -> str:
         # Ensure base name is sanitized and unique alongside .meta
         base_name = self._sanitize_base_name(base_name)
         ext = src_path.suffix
         ext_no_dot = ext.lstrip(".").lower()
-        # Choose destination root based on media vs docs
-        dest_root = (
+
+        # Choose destination root for original files based on media vs docs
+        original_dest_root = (
+            user_dirs["original_media_dir"]
+            if ext_no_dot in self._media_extensions
+            else user_dirs["original_docs_dir"]
+        )
+
+        # Choose destination root for metadata files
+        meta_dest_root = (
             user_dirs["processed_media_dir"]
             if ext_no_dot in self._media_extensions
             else user_dirs["processed_docs_dir"]
         )
+
         candidate_base = base_name
         counter = 1
         while True:
-            file_dest = dest_root / f"{candidate_base}{ext}"
-            meta_dest = dest_root / f"{candidate_base}.meta"
+            file_dest = original_dest_root / f"{candidate_base}{ext}"
+            meta_dest = meta_dest_root / f"{candidate_base}.meta"
             if not file_dest.exists() and not meta_dest.exists():
                 break
             candidate_base = f"{base_name}-{counter}"
             counter += 1
 
-        # Move/rename the actual file
+        # Move/rename the actual file to original directory
         shutil.move(str(src_path), str(file_dest))
 
-        # Write the .meta JSON file
+        # Write the .meta JSON file to processed directory
         meta_payload = {
             "old_name": original_name,
             "name": candidate_base,
@@ -112,8 +137,14 @@ class ProcessHelper:
         with meta_dest.open("w", encoding="utf-8") as f:
             json.dump(meta_payload, f, ensure_ascii=False, indent=2)
 
+        # Write the markdown content if provided
+        if markdown_content:
+            markdown_dest = meta_dest_root / f"{candidate_base}.md"
+            with markdown_dest.open("w", encoding="utf-8") as f:
+                f.write(markdown_content)
+
         # Return path relative to processed dir so callers can locate it
-        return str(file_dest.relative_to(user_dirs["processed_dir"]))
+        return str(meta_dest.relative_to(user_dirs["processed_dir"]))
 
     def _write_link_meta(
         self,
@@ -122,6 +153,7 @@ class ProcessHelper:
         summary: str,
         tags: List[str],
         user_dirs: dict,
+        markdown_content: str = None,
     ) -> str:
         # Ensure base name is sanitized and unique alongside .meta in links dir
         base_name = self._sanitize_base_name(base_name)
@@ -142,6 +174,12 @@ class ProcessHelper:
         }
         with meta_dest.open("w", encoding="utf-8") as f:
             json.dump(meta_payload, f, ensure_ascii=False, indent=2)
+
+        # Write the markdown content if provided
+        if markdown_content:
+            markdown_dest = user_dirs["processed_links_dir"] / f"{candidate_base}.md"
+            with markdown_dest.open("w", encoding="utf-8") as f:
+                f.write(markdown_content)
 
         # Return path relative to processed dir so callers can locate it
         return str(meta_dest.relative_to(user_dirs["processed_dir"]))
@@ -204,7 +242,7 @@ class ProcessHelper:
                 name, summary, tags = self.ai_helper.get_analyzed_file_data(content)
 
                 new_name = self._move_and_rename_with_meta(
-                    path, name, original_name, summary, tags, user_dirs
+                    path, name, original_name, summary, tags, user_dirs, text
                 )
                 self._update_tuple_with_new_name(process_id, original_name, new_name)
                 logger.info(
@@ -268,7 +306,9 @@ class ProcessHelper:
 
                 name, summary, tags = self.ai_helper.get_analyzed_file_data(content)
 
-                new_name = self._write_link_meta(name, url, summary, tags, user_dirs)
+                new_name = self._write_link_meta(
+                    name, url, summary, tags, user_dirs, markdown
+                )
                 self._update_tuple_with_new_name(process_id, url, new_name)
 
                 logger.info(

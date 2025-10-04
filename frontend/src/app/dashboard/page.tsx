@@ -22,10 +22,12 @@ import {
   Link as LinkIcon,
   Plus,
   RefreshCw,
+  Search,
 } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 
 type DocItem = {
   old_name: string;
@@ -147,6 +149,25 @@ export default function Dashboard() {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [downloading, setDownloading] = React.useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
+
+  // Filter function to match search query against name, summary, or tags
+  const filterItems = React.useCallback(
+    (items: DocItem[]) => {
+      if (!searchQuery.trim()) return items;
+
+      const query = searchQuery.toLowerCase();
+      return items.filter((item) => {
+        const nameMatch = item.name.toLowerCase().includes(query);
+        const summaryMatch = item.summary.toLowerCase().includes(query);
+        const tagsMatch =
+          item.tags?.some((tag) => tag.toLowerCase().includes(query)) || false;
+
+        return nameMatch || summaryMatch || tagsMatch;
+      });
+    },
+    [searchQuery],
+  );
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -219,13 +240,27 @@ export default function Dashboard() {
     <div className="p-6 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <button
-          type="button"
-          onClick={() => void load()}
-          className={cn(buttonVariants({ variant: "outline" }))}
-        >
-          <RefreshCw className="size-4 mr-1" /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder="Search files and links"
+              className="w-80 pl-7"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={() => void load()}
+            className={cn()}
+            variant="outline"
+          >
+            <RefreshCw className="size-4 mr-1" /> Refresh
+          </Button>
+        </div>
       </div>
 
       {loading && (
@@ -256,64 +291,76 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold mb-4">Files</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {data.docs && data.docs.length > 0 ? (
-                data.docs.map((doc) => {
-                  const ext = getFileExtension(doc.old_name);
-                  const colors = getFileTypeColors(ext);
-                  return (
-                    <div
-                      key={doc.name + doc.old_name}
-                      className={cn(
-                        "p-4 border rounded-lg flex flex-col h-full",
-                      )}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileTypeIcon
-                          ext={ext}
-                          className={cn(colors.iconColor, "shrink-0")}
-                        />
-                        <div className="font-medium truncate" title={doc.name}>
-                          {doc.name}
+                filterItems(data.docs).length > 0 ? (
+                  filterItems(data.docs).map((doc) => {
+                    const ext = getFileExtension(doc.old_name);
+                    const colors = getFileTypeColors(ext);
+                    return (
+                      <div
+                        key={doc.name + doc.old_name}
+                        className={cn(
+                          "p-4 border rounded-lg flex flex-col h-full",
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileTypeIcon
+                            ext={ext}
+                            className={cn(colors.iconColor, "shrink-0")}
+                          />
+                          <div
+                            className="font-medium truncate"
+                            title={doc.name}
+                          >
+                            {doc.name}
+                          </div>
+                          {ext && (
+                            <span
+                              className={cn(
+                                "text-xs ml-auto rounded px-2 py-0.5 uppercase",
+                                colors.tagBg,
+                              )}
+                            >
+                              {ext}
+                            </span>
+                          )}
                         </div>
-                        {ext && (
-                          <span
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {doc.summary}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {doc.tags?.map((t) => (
+                            <span
+                              key={t}
+                              className="text-xs bg-muted rounded px-2 py-0.5"
+                            >
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="mt-auto flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => downloadFile(doc.name, "docs")}
+                            disabled={downloading === doc.name}
                             className={cn(
-                              "text-xs ml-auto rounded px-2 py-0.5 uppercase",
-                              colors.tagBg,
+                              buttonVariants({ variant: "default" }),
                             )}
                           >
-                            {ext}
-                          </span>
-                        )}
+                            <Download className="size-4 mr-1" />
+                            {downloading === doc.name
+                              ? "Downloading..."
+                              : "Download"}
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {doc.summary}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {doc.tags?.map((t) => (
-                          <span
-                            key={t}
-                            className="text-xs bg-muted rounded px-2 py-0.5"
-                          >
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="mt-auto flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => downloadFile(doc.name, "docs")}
-                          disabled={downloading === doc.name}
-                          className={cn(buttonVariants({ variant: "default" }))}
-                        >
-                          <Download className="size-4 mr-1" />
-                          {downloading === doc.name
-                            ? "Downloading..."
-                            : "Download"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
+                ) : (
+                  <EmptyStateCard
+                    title="No files match your search"
+                    description="Try adjusting your search terms to find what you're looking for."
+                  />
+                )
               ) : (
                 <EmptyStateCard
                   title="No files yet"
@@ -327,46 +374,55 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold mb-4">Media</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {data.media && data.media.length > 0 ? (
-                data.media.map((m) => {
-                  const ext = getFileExtension(m.old_name);
-                  const isAudio = ["mp3", "wav", "aac", "flac"].includes(ext);
-                  const isVideo = ["mp4", "mov", "webm", "mkv"].includes(ext);
-                  return (
-                    <div
-                      key={m.name + m.old_name}
-                      className="p-4 border rounded-lg flex flex-col h-full"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        {isAudio ? (
-                          <FileAudio className="size-5 shrink-0" />
-                        ) : isVideo ? (
-                          <FileVideo className="size-5 shrink-0" />
-                        ) : (
-                          <ImageIcon className="size-5 shrink-0" />
-                        )}
-                        <div className="font-medium truncate" title={m.name}>
-                          {m.name}
+                filterItems(data.media).length > 0 ? (
+                  filterItems(data.media).map((m) => {
+                    const ext = getFileExtension(m.old_name);
+                    const isAudio = ["mp3", "wav", "aac", "flac"].includes(ext);
+                    const isVideo = ["mp4", "mov", "webm", "mkv"].includes(ext);
+                    return (
+                      <div
+                        key={m.name + m.old_name}
+                        className="p-4 border rounded-lg flex flex-col h-full"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          {isAudio ? (
+                            <FileAudio className="size-5 shrink-0" />
+                          ) : isVideo ? (
+                            <FileVideo className="size-5 shrink-0" />
+                          ) : (
+                            <ImageIcon className="size-5 shrink-0" />
+                          )}
+                          <div className="font-medium truncate" title={m.name}>
+                            {m.name}
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                          {m.summary}
+                        </p>
+                        <div className="mt-auto flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => downloadFile(m.name, "media")}
+                            disabled={downloading === m.name}
+                            className={cn(
+                              buttonVariants({ variant: "default" }),
+                            )}
+                          >
+                            <Download className="size-4 mr-1" />
+                            {downloading === m.name
+                              ? "Downloading..."
+                              : "Download"}
+                          </button>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-                        {m.summary}
-                      </p>
-                      <div className="mt-auto flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => downloadFile(m.name, "media")}
-                          disabled={downloading === m.name}
-                          className={cn(buttonVariants({ variant: "default" }))}
-                        >
-                          <Download className="size-4 mr-1" />
-                          {downloading === m.name
-                            ? "Downloading..."
-                            : "Download"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })
+                ) : (
+                  <EmptyStateCard
+                    title="No media matches your search"
+                    description="Try adjusting your search terms to find what you're looking for."
+                  />
+                )
               ) : (
                 <EmptyStateCard
                   title="No media yet"
@@ -380,56 +436,63 @@ export default function Dashboard() {
             <h2 className="text-xl font-semibold mb-4">Links</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {data.links && data.links.length > 0 ? (
-                data.links.map((link) => (
-                  <div
-                    key={link.name + link.old_name}
-                    className="p-4 border rounded-lg flex flex-col gap-3 h-full"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 bg-gradient-to-b from-white to-gray-100 rounded-full border border-border">
-                        <LinkBrandIcon url={link.old_name} />
-                      </div>
-                      <div
-                        className="font-medium truncate"
-                        title={link.old_name}
-                      >
-                        {link.old_name}
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {link.summary}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {link.tags?.map((t) => (
-                        <span
-                          key={t}
-                          className="text-xs bg-muted rounded px-2 py-0.5"
+                filterItems(data.links).length > 0 ? (
+                  filterItems(data.links).map((link) => (
+                    <div
+                      key={link.name + link.old_name}
+                      className="p-4 border rounded-lg flex flex-col gap-3 h-full"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-gradient-to-b from-white to-gray-100 rounded-full border border-border">
+                          <LinkBrandIcon url={link.old_name} />
+                        </div>
+                        <div
+                          className="font-medium truncate"
+                          title={link.old_name}
                         >
-                          {t}
-                        </span>
-                      ))}
+                          {link.old_name}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {link.summary}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {link.tags?.map((t) => (
+                          <span
+                            key={t}
+                            className="text-xs bg-muted rounded px-2 py-0.5"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="mt-auto flex gap-2">
+                        <a
+                          href={link.old_name}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(buttonVariants({ variant: "default" }))}
+                        >
+                          <ExternalLink className="size-4 mr-1" /> Visit
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigator.clipboard.writeText(link.old_name)
+                          }
+                          className={cn(buttonVariants({ variant: "outline" }))}
+                        >
+                          Copy
+                        </button>
+                      </div>
                     </div>
-                    <div className="mt-auto flex gap-2">
-                      <a
-                        href={link.old_name}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(buttonVariants({ variant: "default" }))}
-                      >
-                        <ExternalLink className="size-4 mr-1" /> Visit
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigator.clipboard.writeText(link.old_name)
-                        }
-                        className={cn(buttonVariants({ variant: "outline" }))}
-                      >
-                        Copy
-                      </button>
-                    </div>
-                  </div>
-                ))
+                  ))
+                ) : (
+                  <EmptyStateCard
+                    title="No links match your search"
+                    description="Try adjusting your search terms to find what you're looking for."
+                  />
+                )
               ) : (
                 <EmptyStateCard
                   title="No links yet"

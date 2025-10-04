@@ -18,3 +18,8 @@ class SearchRequest(BaseModel):
 class SearchResponse(BaseModel):
     query: str
     result: str
+
+
+class SingleLinkUploadRequest(BaseModel):
+    link: str
+    username: str

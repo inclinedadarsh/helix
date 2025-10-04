@@ -4,6 +4,8 @@ import { useCallback, useState } from "react";
 import { Upload, X, File, CheckCircle, AlertCircle } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 const ALLOWED_FILE_TYPES = [
   "pdf",
@@ -79,7 +81,7 @@ export default function UploadPage() {
       });
 
       if (errors.length > 0) {
-        alert(errors.join("\n"));
+        toast.error(errors.join("\n"));
       }
 
       if (validFiles.length > 0) {
@@ -155,7 +157,12 @@ export default function UploadPage() {
       );
 
       // Show success message
-      alert("Files uploaded successfully!");
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.7 },
+      });
+      toast.success("Files uploaded successfully!");
 
       // Clear files after a delay
       setTimeout(() => {
