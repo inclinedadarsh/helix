@@ -11,6 +11,15 @@ class DownloadFileRequest(BaseModel):
     file_type: Literal["docs", "media"]
 
 
+class SearchRequest(BaseModel):
+    query: str
+
+
+class SearchResponse(BaseModel):
+    query: str
+    result: str
+
+
 class SingleLinkUploadRequest(BaseModel):
     link: str
     username: str
