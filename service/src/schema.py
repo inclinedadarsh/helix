@@ -9,3 +9,8 @@ class ProcessUrlRequest(BaseModel):
 class DownloadFileRequest(BaseModel):
     file_name: str
     file_type: Literal["docs", "media"]
+
+
+class SingleLinkUploadRequest(BaseModel):
+    link: str
+    username: str
