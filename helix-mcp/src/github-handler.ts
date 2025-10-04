@@ -28,7 +28,7 @@ app.get("/authorize", async (c) => {
 		client: await c.env.OAUTH_PROVIDER.lookupClient(clientId),
 		server: {
 			description: "Helix Remote MCP Server.",
-			logo: "https://raw.githubusercontent.com/aditya-borse/helix-logo/refs/heads/main/helix-logo-mark.png?token=GHSAT0AAAAAADMNH2LXQQQLGER5LRFAIPFA2HANSJA",
+			logo: "https://aditya-borse.github.io/helix-logo/helix-logo-mark.png",
 			name: "Helix MCP",
 		},
 		state: { oauthReqInfo }, 

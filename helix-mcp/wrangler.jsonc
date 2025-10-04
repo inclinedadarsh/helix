@@ -10,6 +10,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "helix-mcp-server",
 	"main": "src/index.ts",
+	"keep_vars": true,
 	"compatibility_date": "2025-03-10",
 	"compatibility_flags": [
 		"nodejs_compat"
