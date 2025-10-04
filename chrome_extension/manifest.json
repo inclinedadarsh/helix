@@ -1,8 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "URL Saver",
-  "description": "Save URLs to your local server with a beautiful, adaptive interface",
+  "name": "Helix",
+  "description": "Save URLs to your Helix account.",
   "version": "2.0",
+  "icons": {
+    "16": "./icons/helix-16.png",
+    "32": "./icons/helix-32.png",
+    "48": "./icons/helix-48.png",
+    "128": "./icons/helix-128.png"
+  },
   "permissions": [
     "tabs",
     "activeTab",
