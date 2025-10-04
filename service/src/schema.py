@@ -13,6 +13,7 @@ class DownloadFileRequest(BaseModel):
 
 class SearchRequest(BaseModel):
     query: str
+    user_id: str
 
 
 class SearchResponse(BaseModel):
