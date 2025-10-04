@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { getAuthHeaders } from "@/lib/auth";
 import { BACKEND_URL } from "@/lib/env";
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "10mb",
+    },
+  },
+};
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
