@@ -6,7 +6,7 @@ import uuid
 import logging
 import glob
 from .utils import FirestoreHelper, ProcessHelper, ClerkHelper
-from .schema import ProcessUrlRequest, DownloadFileRequest
+from .schema import ProcessUrlRequest, DownloadFileRequest, SingleLinkUploadRequest
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -96,6 +96,47 @@ async def process_urls(
     )
 
     return {"message": "saved!", "process_id": process_id}
+
+
+@app.post("/upload-single-link")
+async def upload_single_link(
+    background_tasks: BackgroundTasks,
+    request: SingleLinkUploadRequest,
+):
+    """
+    Process a single link without authentication.
+    Accepts a link and username, processes the link and stores it under the username.
+    """
+    process_id = uuid.uuid4().hex
+    logger.info(
+        f"Single link upload received; starting process {process_id}",
+        extra={
+            "process_id": process_id,
+            "link": request.link,
+            "username": request.username,
+        },
+    )
+
+    # Create process document using username as user_id
+    db.create_process_document(process_id, [request.link], request.username)
+    logger.info(
+        f"Firestore process document created {process_id}",
+        extra={"process_id": process_id},
+    )
+
+    process_helper = ProcessHelper(db)
+    background_tasks.add_task(
+        process_helper.process_links_background,
+        process_id,
+        request.username,
+        [request.link],
+    )
+    logger.info(
+        f"Background single link processing scheduled {process_id}",
+        extra={"process_id": process_id},
+    )
+
+    return {"message": "Link processing started!", "process_id": process_id}
 
 
 @app.get("/processes/recent")
