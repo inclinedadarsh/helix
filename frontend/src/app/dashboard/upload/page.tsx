@@ -5,6 +5,7 @@ import { Upload, X, File, CheckCircle, AlertCircle } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 const ALLOWED_FILE_TYPES = [
   "pdf",
@@ -156,6 +157,11 @@ export default function UploadPage() {
       );
 
       // Show success message
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.7 },
+      });
       toast.success("Files uploaded successfully!");
 
       // Clear files after a delay

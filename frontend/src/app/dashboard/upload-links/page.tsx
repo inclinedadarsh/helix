@@ -20,6 +20,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 type LinkItem = {
   id: string;
@@ -115,6 +116,11 @@ export default function UploadLinksPage() {
       );
 
       // Show success message
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.7 },
+      });
       toast.success("Links processed successfully!");
 
       // Clear links after a delay
