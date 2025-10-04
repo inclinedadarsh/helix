@@ -1,8 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getAuthHeaders } from "@/lib/auth";
-
-const BACKEND_URL = "http://localhost:8000/download";
+import { BACKEND_URL } from "@/lib/env";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Get auth headers for backend
     const headers = await getAuthHeaders();
 
-    const res = await fetch(BACKEND_URL, {
+    const res = await fetch(`${BACKEND_URL}/download`, {
       method: "POST",
       headers,
       body: JSON.stringify({

@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAuthHeaders } from "@/lib/auth";
-
-const BACKEND_URL = "http://localhost:8000/files/processed";
+import { BACKEND_URL } from "@/lib/env";
 
 export async function GET() {
   try {
     const headers = await getAuthHeaders();
 
-    const res = await fetch(BACKEND_URL, {
+    const res = await fetch(`${BACKEND_URL}/files/processed`, {
       method: "GET",
       // Ensure we always hit the backend for latest
       cache: "no-store",
