@@ -4,9 +4,7 @@ import { BACKEND_URL } from "@/lib/env";
 
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: "10mb",
-    },
+    bodyParser: false,
   },
 };
 
