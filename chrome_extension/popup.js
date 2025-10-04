@@ -1,3 +1,7 @@
+// Constants
+const API_ENDPOINT = "http://127.0.0.1:8000/upload-single-link";
+const STORAGE_KEY = "githubUsername";
+
 document.addEventListener("DOMContentLoaded", async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
@@ -9,13 +13,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const usernameStatus = document.getElementById("usernameStatus");
   const currentUsername = document.getElementById("currentUsername");
   const editUsernameBtn = document.getElementById("editUsernameBtn");
-  const urlPreview = document.getElementById("urlPreview");
+  const urlInput = document.getElementById("urlInput");
   const saveBtn = document.getElementById("saveBtn");
   const status = document.getElementById("status");
 
   // Check if username exists in chrome storage
-  const result = await chrome.storage.local.get(['githubUsername']);
-  const savedUsername = result.githubUsername;
+  const result = await chrome.storage.local.get([STORAGE_KEY]);
+  const savedUsername = result[STORAGE_KEY];
 
   if (!savedUsername || savedUsername.trim() === "") {
     // Show username setup state
@@ -34,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     usernameSetup.classList.remove("active");
     mainFunctionality.classList.add("active");
     currentUsername.textContent = username;
-    urlPreview.textContent = tab.url;
+    urlInput.value = tab.url;
   }
 
   // Username setup functionality
@@ -53,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       // Save username to chrome storage
-      await chrome.storage.local.set({ githubUsername: username });
+      await chrome.storage.local.set({ [STORAGE_KEY]: username });
 
       // Show success and switch to main functionality
       usernameStatus.textContent = "Username saved successfully!";
@@ -92,8 +96,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   saveBtn.addEventListener("click", async () => {
     if (saveBtn.classList.contains("loading")) return;
 
-    const result = await chrome.storage.local.get(['githubUsername']);
-    const username = result.githubUsername;
+    const result = await chrome.storage.local.get([STORAGE_KEY]);
+    const username = result[STORAGE_KEY];
     if (!username) {
       status.textContent = "Please set up your username first";
       status.className = "status error";
@@ -105,7 +109,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     status.textContent = "";
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/upload-single-link", {
+      const res = await fetch(API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

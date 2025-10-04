@@ -1,84 +1,52 @@
-function detectSite() {
-  const hostname = window.location.hostname;
-  if (hostname.includes("github.com")) return "github";
-  if (hostname.includes("youtube.com")) return "youtube";
-  if (hostname.includes("linkedin.com")) return "linkedin";
-  return "default";
-}
+// Constants
+const API_ENDPOINT = "http://127.0.0.1:8000/upload-single-link";
+const BUTTON_ID = "url-saver-extension-btn";
+const STORAGE_KEY = "githubUsername";
 
-function getSiteStyles(site) {
-  return {
-    github: {
-      bg: "#21262d",
-      hoverBg: "#30363d",
-      color: "#8b949e",
-      hoverColor: "#c9d1d9",
-      border: "1px solid #30363d",
-      radius: "6px",
-    },
-    youtube: {
-      bg: "rgba(255,255,255,0.1)",
-      hoverBg: "rgba(255,255,255,0.2)",
-      color: "#aaa",
-      hoverColor: "#fff",
-      border: "1px solid rgba(255,255,255,0.1)",
-      radius: "2px",
-    },
-    linkedin: {
-      bg: "transparent",
-      hoverBg: "rgba(0,0,0,0.08)",
-      color: "#666",
-      hoverColor: "#000",
-      border: "1px solid #d0d0d0",
-      radius: "2px",
-    },
-    default: {
-      bg: "rgba(0,0,0,0.05)",
-      hoverBg: "rgba(0,0,0,0.1)",
-      color: "#666",
-      hoverColor: "#333",
-      border: "1px solid rgba(0,0,0,0.1)",
-      radius: "4px",
-    },
-  }[site];
-}
+// Consistent button styling
+const BUTTON_STYLES = {
+  bg: "rgba(0,0,0,0.8)",
+  hoverBg: "rgba(0,0,0,0.9)",
+  color: "#fff",
+  hoverColor: "#fff",
+  border: "1px solid rgba(0,0,0,0.2)",
+  radius: "6px",
+};
 
 function createSaveButton() {
-  if (document.getElementById("url-saver-extension-btn")) return;
-
-  const site = detectSite();
-  const styles = getSiteStyles(site);
+  if (document.getElementById(BUTTON_ID)) return;
 
   const button = document.createElement("button");
-  button.id = "url-saver-extension-btn";
+  button.id = BUTTON_ID;
   button.textContent = "Save";
 
   button.style.cssText = `
     position:fixed;
     bottom:20px;
     right:20px;
-    background:${styles.bg};
-    color:${styles.color};
-    border:${styles.border};
-    border-radius:${styles.radius};
-    padding:6px 12px;
+    background:${BUTTON_STYLES.bg};
+    color:${BUTTON_STYLES.color};
+    border:${BUTTON_STYLES.border};
+    border-radius:${BUTTON_STYLES.radius};
+    padding:8px 16px;
     cursor:pointer;
     z-index:999999;
-    font-size:13px;
+    font-size:14px;
     font-family:sans-serif;
     transition:all .2s ease;
-    opacity:.7;
+    opacity:.8;
+    font-weight:500;
   `;
 
   button.addEventListener("mouseenter", () => {
-    button.style.background = styles.hoverBg;
-    button.style.color = styles.hoverColor;
+    button.style.background = BUTTON_STYLES.hoverBg;
+    button.style.color = BUTTON_STYLES.hoverColor;
     button.style.opacity = "1";
   });
   button.addEventListener("mouseleave", () => {
-    button.style.background = styles.bg;
-    button.style.color = styles.color;
-    button.style.opacity = ".7";
+    button.style.background = BUTTON_STYLES.bg;
+    button.style.color = BUTTON_STYLES.color;
+    button.style.opacity = ".8";
   });
 
   button.addEventListener("click", async () => {
@@ -89,8 +57,8 @@ function createSaveButton() {
 
     try {
       // Get username from storage
-      const result = await chrome.storage.local.get(['githubUsername']);
-      const username = result.githubUsername;
+      const result = await chrome.storage.local.get([STORAGE_KEY]);
+      const username = result[STORAGE_KEY];
 
       if (!username) {
         button.textContent = "No Username";
@@ -107,7 +75,7 @@ function createSaveButton() {
         username: username
       };
 
-      const res = await fetch("http://127.0.0.1:8000/upload-single-link", {
+      const res = await fetch(API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
