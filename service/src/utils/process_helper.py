@@ -93,6 +93,7 @@ class ProcessHelper:
         summary: str,
         tags: List[str],
         user_dirs: dict,
+        markdown_content: str = None,
     ) -> str:
         # Ensure base name is sanitized and unique alongside .meta
         base_name = self._sanitize_base_name(base_name)
@@ -136,6 +137,12 @@ class ProcessHelper:
         with meta_dest.open("w", encoding="utf-8") as f:
             json.dump(meta_payload, f, ensure_ascii=False, indent=2)
 
+        # Write the markdown content if provided
+        if markdown_content:
+            markdown_dest = meta_dest_root / f"{candidate_base}.md"
+            with markdown_dest.open("w", encoding="utf-8") as f:
+                f.write(markdown_content)
+
         # Return path relative to processed dir so callers can locate it
         return str(meta_dest.relative_to(user_dirs["processed_dir"]))
 
@@ -146,6 +153,7 @@ class ProcessHelper:
         summary: str,
         tags: List[str],
         user_dirs: dict,
+        markdown_content: str = None,
     ) -> str:
         # Ensure base name is sanitized and unique alongside .meta in links dir
         base_name = self._sanitize_base_name(base_name)
@@ -166,6 +174,12 @@ class ProcessHelper:
         }
         with meta_dest.open("w", encoding="utf-8") as f:
             json.dump(meta_payload, f, ensure_ascii=False, indent=2)
+
+        # Write the markdown content if provided
+        if markdown_content:
+            markdown_dest = user_dirs["processed_links_dir"] / f"{candidate_base}.md"
+            with markdown_dest.open("w", encoding="utf-8") as f:
+                f.write(markdown_content)
 
         # Return path relative to processed dir so callers can locate it
         return str(meta_dest.relative_to(user_dirs["processed_dir"]))
@@ -228,7 +242,7 @@ class ProcessHelper:
                 name, summary, tags = self.ai_helper.get_analyzed_file_data(content)
 
                 new_name = self._move_and_rename_with_meta(
-                    path, name, original_name, summary, tags, user_dirs
+                    path, name, original_name, summary, tags, user_dirs, text
                 )
                 self._update_tuple_with_new_name(process_id, original_name, new_name)
                 logger.info(
@@ -292,7 +306,9 @@ class ProcessHelper:
 
                 name, summary, tags = self.ai_helper.get_analyzed_file_data(content)
 
-                new_name = self._write_link_meta(name, url, summary, tags, user_dirs)
+                new_name = self._write_link_meta(
+                    name, url, summary, tags, user_dirs, markdown
+                )
                 self._update_tuple_with_new_name(process_id, url, new_name)
 
                 logger.info(
