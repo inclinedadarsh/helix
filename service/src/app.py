@@ -147,9 +147,14 @@ async def download_file(
     - file_name: name of the file without extension
     - file_type: either "docs" or "media"
     """
-    base_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "uploads", current_user, "processed"
+    uploads_base_dir = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "uploads", current_user
     )
+
+    # Check metadata in processed directory
+    processed_dir = os.path.join(uploads_base_dir, "processed")
+    # Get actual files from original directory
+    original_dir = os.path.join(uploads_base_dir, "original")
 
     # Validate file type
     if request.file_type not in ["docs", "media"]:
@@ -157,21 +162,32 @@ async def download_file(
             status_code=400, detail="file_type must be either 'docs' or 'media'"
         )
 
-    # Construct the search directory
-    search_dir = os.path.join(base_dir, request.file_type)
-
-    if not os.path.isdir(search_dir):
+    # Check if metadata exists in processed directory
+    processed_search_dir = os.path.join(processed_dir, request.file_type)
+    if not os.path.isdir(processed_search_dir):
         raise HTTPException(
             status_code=404, detail=f"No {request.file_type} directory found"
         )
 
-    # Search for files with the given name (without extension)
-    # Look for any file that starts with the given name
-    pattern = os.path.join(search_dir, f"{request.file_name}.*")
-    matching_files = glob.glob(pattern)
+    # Look for metadata file to confirm the file exists
+    meta_pattern = os.path.join(processed_search_dir, f"{request.file_name}.meta")
+    if not os.path.exists(meta_pattern):
+        raise HTTPException(
+            status_code=404,
+            detail=f"No file found with name '{request.file_name}' in {request.file_type} directory",
+        )
 
-    # Filter out .meta files
-    matching_files = [f for f in matching_files if not f.endswith(".meta")]
+    # Now look for the actual file in original directory
+    original_search_dir = os.path.join(original_dir, request.file_type)
+    if not os.path.isdir(original_search_dir):
+        raise HTTPException(
+            status_code=404,
+            detail=f"No {request.file_type} directory found in original folder",
+        )
+
+    # Search for files with the given name (without extension) in original directory
+    pattern = os.path.join(original_search_dir, f"{request.file_name}.*")
+    matching_files = glob.glob(pattern)
 
     if not matching_files:
         raise HTTPException(
