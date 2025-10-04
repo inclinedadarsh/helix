@@ -7,7 +7,6 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  ExternalLink,
   Link2Icon,
 } from "lucide-react";
 import {
@@ -20,6 +19,7 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type LinkItem = {
   id: string;
@@ -50,14 +50,14 @@ export default function UploadLinksPage() {
 
     const error = validateUrl(newUrl.trim());
     if (error) {
-      alert(error);
+      toast.error(error);
       return;
     }
 
     // Check for duplicates
     const isDuplicate = links.some((link) => link.url === newUrl.trim());
     if (isDuplicate) {
-      alert("This URL has already been added");
+      toast.error("This URL has already been added");
       return;
     }
 
@@ -115,7 +115,7 @@ export default function UploadLinksPage() {
       );
 
       // Show success message
-      alert("Links processed successfully!");
+      toast.success("Links processed successfully!");
 
       // Clear links after a delay
       setTimeout(() => {
