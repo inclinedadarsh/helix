@@ -5,8 +5,10 @@ import json
 import uuid
 import logging
 import glob
+from pathlib import Path
 from .utils import FirestoreHelper, ProcessHelper, ClerkHelper
-from .schema import ProcessUrlRequest, DownloadFileRequest
+from .utils.agent import helix
+from .schema import ProcessUrlRequest, DownloadFileRequest, SearchRequest, SearchResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -192,3 +194,33 @@ async def download_file(
         filename=original_filename,
         media_type="application/octet-stream",
     )
+
+
+@app.post("/search", response_model=SearchResponse)
+async def search(
+    request: SearchRequest,
+    current_user: str = Depends(clerk.get_clerk_payload),
+):
+    """
+    Search across user's processed files using multi-agent system.
+    Request body should contain:
+    - query: The search query string
+    """
+    try:
+        logger.info(f"Search request received from user: {current_user}")
+        
+        base_dir = Path(__file__).resolve().parents[1] / "uploads" / current_user / "processed"
+        for subdirectory in ["links", "docs", "media"]:
+            dir_path = base_dir / subdirectory
+            dir_path.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Ensured directory exists: {dir_path}")
+        
+        result = await helix(current_user, request.query)
+        
+        return SearchResponse(
+            query=request.query,
+            result=result
+        )
+    except Exception as e:
+        logger.error(f"Error processing search request for user {current_user}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
