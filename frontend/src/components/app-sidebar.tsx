@@ -16,7 +16,7 @@ import { UserButton } from "@clerk/nextjs";
 
 const sidebarItems = [
   {
-    label: "All Files",
+    label: "My Files and Links",
     link: "/dashboard",
     icon: <Files size={20} />,
   },
