@@ -12,6 +12,7 @@ import { AuroraText } from "@/components/ui/aurora-text";
 import Features from "@/components/features";
 import { DemoVideo } from "@/components/demo-video";
 import CTA from "@/components/cta";
+import Footer from "@/components/footer";
 
 export default function Home() {
   return (
@@ -54,9 +55,8 @@ export default function Home() {
         </h1>
         <p className="font-medium text-gray-800 z-20 mt-10 max-w-2xl text-center text-pretty">
           Drop your files and links, and Helix ensures your LLM never forgets.
-          Super-fast indexing with Cerebras, smart context from Llama, and
-          seamless Docker MCP integration keep your AI sharp and always on
-          point.
+          Super-fast agentic search with Cerebras and Llama, and seamless Docker
+          MCP Gateway integration keeps your AI sharp and always on point.
         </p>
         <SignedOut>
           <SignUpButton mode="modal">
@@ -86,6 +86,7 @@ export default function Home() {
       <Features />
       <DemoVideo />
       <CTA />
+      <Footer />
     </main>
   );
 }
