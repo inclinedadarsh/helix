@@ -13,6 +13,7 @@ class DownloadFileRequest(BaseModel):
 
 class SearchRequest(BaseModel):
     query: str
+    user_id: str
 
 
 class SearchResponse(BaseModel):
@@ -23,3 +24,7 @@ class SearchResponse(BaseModel):
 class SingleLinkUploadRequest(BaseModel):
     link: str
     username: str
+
+
+class DeleteFileRequest(BaseModel):
+    file_name: str

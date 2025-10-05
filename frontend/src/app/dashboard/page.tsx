@@ -23,6 +23,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Trash2,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -149,6 +150,7 @@ export default function Dashboard() {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [downloading, setDownloading] = React.useState<string | null>(null);
+  const [deleting, setDeleting] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
 
   // Filter function to match search query against name, summary, or tags
@@ -232,6 +234,44 @@ export default function Dashboard() {
     [],
   );
 
+  const deleteFile = React.useCallback(
+    async (fileName: string, fileType: "docs" | "media" | "links") => {
+      if (
+        !confirm(
+          `Are you sure you want to delete "${fileName}"? This action cannot be undone.`,
+        )
+      ) {
+        return;
+      }
+
+      setDeleting(fileName);
+      try {
+        const res = await fetch("/api/delete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            file_name: fileName,
+            file_type: fileType,
+          }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to delete file");
+        }
+
+        // Refresh the data after successful deletion
+        await load();
+      } catch (e) {
+        setError((e as Error).message || "Failed to delete file");
+      } finally {
+        setDeleting(null);
+      }
+    },
+    [load],
+  );
+
   React.useEffect(() => {
     void load();
   }, [load]);
@@ -299,7 +339,7 @@ export default function Dashboard() {
                       <div
                         key={doc.name + doc.old_name}
                         className={cn(
-                          "p-4 border rounded-lg flex flex-col h-full",
+                          "p-4 border rounded-lg flex flex-col h-full group relative",
                         )}
                       >
                         <div className="flex items-center gap-2 mb-2">
@@ -323,6 +363,18 @@ export default function Dashboard() {
                               {ext}
                             </span>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => deleteFile(doc.name, "docs")}
+                            disabled={deleting === doc.name}
+                            className={cn(
+                              "absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 rounded-full hover:bg-destructive/10 text-destructive hover:text-destructive-foreground bg-background border border-destructive/20 shadow-lg cursor-pointer",
+                              deleting === doc.name && "opacity-100",
+                            )}
+                            title="Delete file"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                           {doc.summary}
@@ -382,7 +434,7 @@ export default function Dashboard() {
                     return (
                       <div
                         key={m.name + m.old_name}
-                        className="p-4 border rounded-lg flex flex-col h-full"
+                        className="p-4 border rounded-lg flex flex-col h-full group relative"
                       >
                         <div className="flex items-center gap-2 mb-2">
                           {isAudio ? (
@@ -395,6 +447,18 @@ export default function Dashboard() {
                           <div className="font-medium truncate" title={m.name}>
                             {m.name}
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => deleteFile(m.name, "media")}
+                            disabled={deleting === m.name}
+                            className={cn(
+                              "absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 rounded-full hover:bg-destructive/10 text-destructive hover:text-destructive-foreground bg-background border border-destructive/20 shadow-lg cursor-pointer",
+                              deleting === m.name && "opacity-100",
+                            )}
+                            title="Delete media"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                           {m.summary}
@@ -440,7 +504,7 @@ export default function Dashboard() {
                   filterItems(data.links).map((link) => (
                     <div
                       key={link.name + link.old_name}
-                      className="p-4 border rounded-lg flex flex-col gap-3 h-full"
+                      className="p-4 border rounded-lg flex flex-col gap-3 h-full group relative"
                     >
                       <div className="flex items-center gap-2">
                         <div className="p-2 bg-gradient-to-b from-white to-gray-100 rounded-full border border-border">
@@ -452,6 +516,18 @@ export default function Dashboard() {
                         >
                           {link.old_name}
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => deleteFile(link.name, "links")}
+                          disabled={deleting === link.name}
+                          className={cn(
+                            "absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 rounded-full hover:bg-destructive/10 text-destructive hover:text-destructive-foreground bg-background border border-destructive/20 shadow-lg cursor-pointer",
+                            deleting === link.name && "opacity-100",
+                          )}
+                          title="Delete link"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-2">
                         {link.summary}

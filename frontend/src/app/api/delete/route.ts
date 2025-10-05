@@ -15,9 +15,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!["docs", "media"].includes(file_type)) {
+    if (!["docs", "media", "links"].includes(file_type)) {
       return NextResponse.json(
-        { error: "file_type must be either 'docs' or 'media'" },
+        { error: "file_type must be either 'docs', 'media', or 'links'" },
         { status: 400 },
       );
     }
@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
     // Get auth headers for backend
     const headers = await getAuthHeaders();
 
-    const res = await fetch(`${BACKEND_URL}/download`, {
-      method: "POST",
+    const res = await fetch(`${BACKEND_URL}/files`, {
+      method: "DELETE",
       headers,
       body: JSON.stringify({
         file_name,
@@ -36,30 +36,15 @@ export async function POST(request: NextRequest) {
 
     if (!res.ok) {
       return NextResponse.json(
-        { error: "Failed to download file", status: res.status },
+        { error: "Failed to delete file", status: res.status },
         { status: res.status },
       );
     }
 
-    // Get the file content and headers from the backend response
-    const fileBuffer = await res.arrayBuffer();
-    const contentType =
-      res.headers.get("content-type") || "application/octet-stream";
-    const contentDisposition =
-      res.headers.get("content-disposition") ||
-      `attachment; filename="${file_name}"`;
-
-    // Return the file as a response
-    return new NextResponse(fileBuffer, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Content-Disposition": contentDisposition,
-        "Cache-Control": "no-cache",
-      },
-    });
+    const data = await res.json();
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    console.error("Download error:", error);
+    console.error("Delete error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

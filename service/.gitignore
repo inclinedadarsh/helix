@@ -11,6 +11,8 @@ wheels/
 
 # Environment variables
 .env
+.env.prod
+.env.dev
 
 # Uploads
 uploads/

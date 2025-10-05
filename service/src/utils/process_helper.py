@@ -24,8 +24,10 @@ if not logger.handlers:
 class ProcessHelper:
     def __init__(self, db: FirestoreHelper):
         self.db = db
-        # Resolve uploads directory at project root (one level up from src)
-        base_dir = Path(__file__).resolve().parents[2]
+        # Uploads directory is one level up from project root (adjacent to project)
+        base_dir = (
+            Path(__file__).resolve().parents[3]
+        )  # Go up 3 levels from src/utils/process_helper.py
         self._uploads_dir = base_dir / "uploads"
         self._media_extensions = {"mp4", "mp3"}
         self.ai_helper = AIHelper()

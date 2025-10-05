@@ -8,8 +8,23 @@ import glob
 from pathlib import Path
 from .utils import FirestoreHelper, ProcessHelper, ClerkHelper
 from .utils.agent import helix
-from .schema import ProcessUrlRequest, DownloadFileRequest, SingleLinkUploadRequest, SearchRequest, SearchResponse
+from .schema import (
+    ProcessUrlRequest,
+    DownloadFileRequest,
+    SingleLinkUploadRequest,
+    SearchRequest,
+    SearchResponse,
+    DeleteFileRequest,
+)
 from fastapi.middleware.cors import CORSMiddleware
+
+
+def get_uploads_base_dir() -> Path:
+    """Get the uploads base directory (adjacent to project root)."""
+    # Uploads directory is one level up from project root (adjacent to project)
+    base_dir = Path(__file__).resolve().parents[2]  # Go up 2 levels from src/app.py
+    return base_dir / "uploads"
+
 
 app = FastAPI()
 db = FirestoreHelper()
@@ -149,9 +164,7 @@ def get_recent_processes(current_user: str = Depends(clerk.get_clerk_payload)):
 
 @app.get("/files/processed")
 def get_processed_files(current_user: str = Depends(clerk.get_clerk_payload)):
-    base_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "uploads", current_user, "processed"
-    )
+    base_dir = get_uploads_base_dir() / current_user / "processed"
 
     categories = {
         "docs": [],
@@ -160,15 +173,14 @@ def get_processed_files(current_user: str = Depends(clerk.get_clerk_payload)):
     }
 
     for category in categories.keys():
-        category_dir = os.path.join(base_dir, category)
-        if not os.path.isdir(category_dir):
+        category_dir = base_dir / category
+        if not category_dir.is_dir():
             continue
         try:
-            for entry in os.listdir(category_dir):
-                if entry.endswith(".meta"):
-                    meta_path = os.path.join(category_dir, entry)
+            for entry in category_dir.iterdir():
+                if entry.name.endswith(".meta"):
                     try:
-                        with open(meta_path, "r") as f:
+                        with open(entry, "r") as f:
                             data = json.load(f)
                             categories[category].append(data)
                     except Exception:
@@ -190,14 +202,12 @@ async def download_file(
     - file_name: name of the file without extension
     - file_type: either "docs" or "media"
     """
-    uploads_base_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "uploads", current_user
-    )
+    uploads_base_dir = get_uploads_base_dir() / current_user
 
     # Check metadata in processed directory
-    processed_dir = os.path.join(uploads_base_dir, "processed")
+    processed_dir = uploads_base_dir / "processed"
     # Get actual files from original directory
-    original_dir = os.path.join(uploads_base_dir, "original")
+    original_dir = uploads_base_dir / "original"
 
     # Validate file type
     if request.file_type not in ["docs", "media"]:
@@ -206,30 +216,30 @@ async def download_file(
         )
 
     # Check if metadata exists in processed directory
-    processed_search_dir = os.path.join(processed_dir, request.file_type)
-    if not os.path.isdir(processed_search_dir):
+    processed_search_dir = processed_dir / request.file_type
+    if not processed_search_dir.is_dir():
         raise HTTPException(
             status_code=404, detail=f"No {request.file_type} directory found"
         )
 
     # Look for metadata file to confirm the file exists
-    meta_pattern = os.path.join(processed_search_dir, f"{request.file_name}.meta")
-    if not os.path.exists(meta_pattern):
+    meta_pattern = processed_search_dir / f"{request.file_name}.meta"
+    if not meta_pattern.exists():
         raise HTTPException(
             status_code=404,
             detail=f"No file found with name '{request.file_name}' in {request.file_type} directory",
         )
 
     # Now look for the actual file in original directory
-    original_search_dir = os.path.join(original_dir, request.file_type)
-    if not os.path.isdir(original_search_dir):
+    original_search_dir = original_dir / request.file_type
+    if not original_search_dir.is_dir():
         raise HTTPException(
             status_code=404,
             detail=f"No {request.file_type} directory found in original folder",
         )
 
     # Search for files with the given name (without extension) in original directory
-    pattern = os.path.join(original_search_dir, f"{request.file_name}.*")
+    pattern = str(original_search_dir / f"{request.file_name}.*")
     matching_files = glob.glob(pattern)
 
     if not matching_files:
@@ -242,7 +252,7 @@ async def download_file(
     file_path = matching_files[0]
 
     # Get the original filename for the download
-    original_filename = os.path.basename(file_path)
+    original_filename = Path(file_path).name
 
     logger.info(f"Downloading file: {file_path}")
 
@@ -253,31 +263,151 @@ async def download_file(
     )
 
 
+@app.delete("/files")
+async def delete_file(
+    request: DeleteFileRequest,
+    current_user: str = Depends(clerk.get_clerk_payload),
+):
+    """
+    Delete a file by name for the current user.
+    Removes .meta and .md files from processed directory and original file from original directory.
+    Request body should contain:
+    - file_name: name of the file without extension
+    """
+    try:
+        logger.info(
+            f"Delete file request received for user: {current_user}, file: {request.file_name}"
+        )
+
+        # Get base directories
+        base_dir = get_uploads_base_dir() / current_user
+        processed_dir = base_dir / "processed"
+        original_dir = base_dir / "original"
+
+        logger.info(f"Base directory: {base_dir}")
+        logger.info(f"Processed directory exists: {processed_dir.exists()}")
+        logger.info(f"Original directory exists: {original_dir.exists()}")
+
+        deleted_files = []
+        found_any = False
+
+        # Categories to search in
+        categories = ["docs", "media", "links"]
+        logger.info(f"Searching in categories: {categories}")
+
+        # Search in processed directories for .meta and .md files
+        for category in categories:
+            category_processed_dir = processed_dir / category
+            logger.info(
+                f"Checking processed category '{category}': {category_processed_dir}"
+            )
+            logger.info(f"Category directory exists: {category_processed_dir.exists()}")
+
+            if category_processed_dir.exists():
+                # Look for .meta file
+                meta_file = category_processed_dir / f"{request.file_name}.meta"
+                logger.info(f"Looking for meta file: {meta_file}")
+                logger.info(f"Meta file exists: {meta_file.exists()}")
+
+                if meta_file.exists():
+                    meta_file.unlink()
+                    deleted_files.append(str(meta_file))
+                    found_any = True
+                    logger.info(f"Deleted meta file: {meta_file}")
+
+                # Look for .md file
+                md_file = category_processed_dir / f"{request.file_name}.md"
+                logger.info(f"Looking for markdown file: {md_file}")
+                logger.info(f"Markdown file exists: {md_file.exists()}")
+
+                if md_file.exists():
+                    md_file.unlink()
+                    deleted_files.append(str(md_file))
+                    found_any = True
+                    logger.info(f"Deleted markdown file: {md_file}")
+
+        # Search in original directories for the actual file
+        for category in categories:
+            category_original_dir = original_dir / category
+            logger.info(
+                f"Checking original category '{category}': {category_original_dir}"
+            )
+            logger.info(
+                f"Original category directory exists: {category_original_dir.exists()}"
+            )
+
+            if category_original_dir.exists():
+                # Look for files with the given name and any extension
+                pattern = f"{request.file_name}.*"
+                logger.info(
+                    f"Searching for pattern: {pattern} in {category_original_dir}"
+                )
+                matching_files = list(category_original_dir.glob(pattern))
+                logger.info(
+                    f"Found {len(matching_files)} matching files: {matching_files}"
+                )
+
+                for file_path in matching_files:
+                    logger.info(f"Deleting original file: {file_path}")
+                    file_path.unlink()
+                    deleted_files.append(str(file_path))
+                    found_any = True
+                    logger.info(f"Successfully deleted original file: {file_path}")
+
+        logger.info(f"Total files found and deleted: {len(deleted_files)}")
+        logger.info(f"Found any files: {found_any}")
+
+        if not found_any:
+            logger.warning(
+                f"No files found with name '{request.file_name}' for user '{current_user}'"
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=f"No file found with name '{request.file_name}' for user '{current_user}'",
+            )
+
+        logger.info(
+            f"Successfully deleted {len(deleted_files)} files for user {current_user}"
+        )
+        logger.info(f"Deleted files list: {deleted_files}")
+
+        return {
+            "message": f"Successfully deleted file '{request.file_name}'",
+            "deleted_files": deleted_files,
+            "count": len(deleted_files),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Error deleting file '{request.file_name}' for user {current_user}: {str(e)}"
+        )
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/search", response_model=SearchResponse)
 async def search(
     request: SearchRequest,
-    current_user: str = Depends(clerk.get_clerk_payload),
 ):
     """
     Search across user's processed files using multi-agent system.
     Request body should contain:
     - query: The search query string
     """
+    user_id = request.user_id
     try:
-        logger.info(f"Search request received from user: {current_user}")
-        
-        base_dir = Path(__file__).resolve().parents[1] / "uploads" / current_user / "processed"
+        logger.info(f"Search request received from user: {user_id}")
+
+        base_dir = get_uploads_base_dir() / user_id / "processed"
         for subdirectory in ["links", "docs", "media"]:
             dir_path = base_dir / subdirectory
             dir_path.mkdir(parents=True, exist_ok=True)
             logger.info(f"Ensured directory exists: {dir_path}")
-        
-        result = await helix(current_user, request.query)
-        
-        return SearchResponse(
-            query=request.query,
-            result=result
-        )
+
+        result = await helix(user_id, request.query)
+
+        return SearchResponse(query=request.query, result=result)
     except Exception as e:
-        logger.error(f"Error processing search request for user {current_user}: {str(e)}")
+        logger.error(f"Error processing search request for user {user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

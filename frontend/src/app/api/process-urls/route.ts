@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthHeaders } from "@/lib/auth";
+import { BACKEND_URL } from "@/lib/env";
 
 export async function POST(request: Request) {
   try {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     const headers = await getAuthHeaders();
 
     // Send to FastAPI backend
-    const response = await fetch("http://localhost:8000/process-urls", {
+    const response = await fetch(`${BACKEND_URL}/process-urls`, {
       method: "POST",
       headers,
       body: JSON.stringify({ urls: validUrls }),

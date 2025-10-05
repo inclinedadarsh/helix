@@ -29,7 +29,7 @@ def detect_url_type(url):
         return "wikipedia"
     else:
         return "web"
-    
+
 
 def process_linkedin_url(url):
     is_post = any(path in url for path in ["/posts/", "/feed/update/"])
@@ -50,37 +50,42 @@ def process_linkedin_url(url):
 
         markdown = f"# LinkedIn Post\n\n**URL:** {url}\n\n---\n\n"
         markdown += f"**Title:** {title['content'] if title else '*No title*'}\n\n"
-        markdown += f"**Content:** {desc['content'] if desc else '*No description*'}\n\n"
+        markdown += (
+            f"**Content:** {desc['content'] if desc else '*No description*'}\n\n"
+        )
         return markdown
 
     except Exception as e:
         return f"Error processing LinkedIn URL: {e}"
-    
+
+
 def process_reddit_url(url: str) -> str:
     if "/comments/" not in url:
-        print(f"INFO: Reddit URL is not a post (missing '/comments/'). Treating as web content.")
+        print(
+            f"INFO: Reddit URL is not a post (missing '/comments/'). Treating as web content."
+        )
         return process_web_url(url)
-    
+
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
-        
+
         # Try JSON API first (most reliable)
-        json_url = url.rstrip('/') + '.json'
+        json_url = url.rstrip("/") + ".json"
         try:
             resp = requests.get(json_url, headers=headers, timeout=10)
             resp.raise_for_status()
             data = resp.json()
-            
+
             # Extract from JSON structure
-            post_data = data[0]['data']['children'][0]['data']
-            title = post_data.get('title', 'No title found')
-            body = post_data.get('selftext', '')
-            author = post_data.get('author', '')
-            subreddit = post_data.get('subreddit', '')
-            score = post_data.get('score', 0)
-            
+            post_data = data[0]["data"]["children"][0]["data"]
+            title = post_data.get("title", "No title found")
+            body = post_data.get("selftext", "")
+            author = post_data.get("author", "")
+            subreddit = post_data.get("subreddit", "")
+            score = post_data.get("score", 0)
+
             # Format output
             result = [f"# {title}"]
             meta = []
@@ -92,28 +97,28 @@ def process_reddit_url(url: str) -> str:
                 meta.append(f"({score} points)")
             if meta:
                 result.append(" ".join(meta))
-            
+
             result.append("")  # blank line
             result.append(body if body else "(No body text found)")
-            
+
             return "\n".join(result)
-            
+
         except (requests.RequestException, KeyError, IndexError, ValueError):
             # JSON fetch failed, try HTML scraping
             pass
-        
+
         # Fallback to HTML scraping
         resp = requests.get(url, headers=headers, timeout=10)
         resp.raise_for_status()
         soup = BeautifulSoup(resp.text, "lxml")
-        
+
         # Extract title
         title_tag = soup.find("h1")
         title = title_tag.get_text(strip=True) if title_tag else "No title found"
-        
+
         # Extract body - try multiple selectors
         body = ""
-        
+
         # New Reddit layout
         body_tag = soup.find("div", {"data-test-id": "post-content"})
         if body_tag:
@@ -133,18 +138,18 @@ def process_reddit_url(url: str) -> str:
                     body_tag = soup.find("div", class_="usertext-body")
                     if body_tag:
                         body = body_tag.get_text(separator="\n", strip=True)
-        
+
         # Extract metadata
         author = ""
         author_tag = soup.find("a", href=lambda x: x and "/user/" in x)
         if author_tag:
             author = author_tag.get_text(strip=True)
-        
+
         subreddit = ""
         sub_tag = soup.find("a", href=lambda x: x and x.startswith("/r/"))
         if sub_tag:
             subreddit = sub_tag.get_text(strip=True)
-        
+
         # Format output
         result = [f"# {title}"]
         meta = []
@@ -154,16 +159,17 @@ def process_reddit_url(url: str) -> str:
             meta.append(f"in {subreddit}")
         if meta:
             result.append(" ".join(meta))
-        
+
         result.append("")  # blank line
         result.append(body if body else "(No body text found)")
-        
+
         return "\n".join(result)
-        
+
     except requests.RequestException as e:
         return f"Error: Network request failed - {e}"
     except Exception as e:
         return f"Error: Failed to extract Reddit post - {e}"
+
 
 def process_wikipedia_url(url):
     """
@@ -174,10 +180,10 @@ def process_wikipedia_url(url):
         parsed = urlparse(url)
         # Decode the URL path to get the actual title (e.g., handles spaces/underscores)
         # We unquote the last part of the path (the title)
-        title = requests.utils.unquote(parsed.path.split("/")[-1]) 
+        title = requests.utils.unquote(parsed.path.split("/")[-1])
 
         # Retrieve the page content using the wikipedia library
-        # auto_suggest=False prevents correcting the title if it's slightly wrong, 
+        # auto_suggest=False prevents correcting the title if it's slightly wrong,
         # which is usually what we want when the URL is given directly.
         page = wikipedia.page(title, auto_suggest=False, redirect=True)
 
@@ -187,23 +193,26 @@ def process_wikipedia_url(url):
         markdown += "---\n\n"
         # Extract full content (plain text)
         markdown += "## Full Content\n\n"
-        markdown += page.content 
-        
+        markdown += page.content
+
         return markdown
 
     except wikipedia.exceptions.PageError:
         return f"Error: Wikipedia page '{title}' not found."
     except Exception as e:
         return f"Error processing Wikipedia URL: {type(e).__name__} - {e}"
-    
+
+
 def process_x_url(url):
     if "/status/" not in url:
-        print(f"INFO: X URL is not a post (missing '/status/'). Treating as web content.")
+        print(
+            f"INFO: X URL is not a post (missing '/status/'). Treating as web content."
+        )
         return process_web_url(url)
-    
+
     if not BEARER_TOKEN:
         return "Error: X API key not found. Ensure 'BEARER_TOKEN' is set in your .env file and loaded correctly."
-        
+
     # 1. Extract the Tweet/Post ID
     # Handles both x.com and twitter.com URLs
     tweet_id_match = re.search(r"/status/(\d+)", url)
@@ -215,33 +224,39 @@ def process_x_url(url):
     try:
         # 2. Initialize the Tweepy Client
         client = tweepy.Client(BEARER_TOKEN)
-        
+
         # 3. Fetch Tweet Data (V2 API)
         response = client.get_tweet(
             id=tweet_id,
             # Request necessary fields
             tweet_fields=["created_at", "public_metrics"],
             expansions=["author_id"],
-            user_fields=["username", "name"]
+            user_fields=["username", "name"],
         )
 
         if not response.data:
             return f"Error: X post (ID: {tweet_id}) not found, is private, or has been deleted."
 
         tweet = response.data
-        author = response.includes.get('users', [None])[0] if response.includes else None
+        author = (
+            response.includes.get("users", [None])[0] if response.includes else None
+        )
 
         # 4. Extract and Format Data
         text = tweet.text
-        author_name = author.name if author else 'Unknown User'
-        author_username = author.username if author else 'N/A'
-        created_at = tweet.created_at.strftime("%Y-%m-%d %H:%M:%S") if tweet.created_at else 'N/A'
-        
+        author_name = author.name if author else "Unknown User"
+        author_username = author.username if author else "N/A"
+        created_at = (
+            tweet.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            if tweet.created_at
+            else "N/A"
+        )
+
         metrics = tweet.public_metrics
-        likes = metrics.get('like_count', 0)
-        reposts = metrics.get('retweet_count', 0)
-        quotes = metrics.get('quote_count', 0)
-        views = metrics.get('impression_count', 0)
+        likes = metrics.get("like_count", 0)
+        reposts = metrics.get("retweet_count", 0)
+        quotes = metrics.get("quote_count", 0)
+        views = metrics.get("impression_count", 0)
 
         # 5. Format the Output into Markdown
         markdown = f"# X Post (Tweet ID: {tweet_id})\n\n"
@@ -252,13 +267,16 @@ def process_x_url(url):
         markdown += f"**Metrics:** {likes:,} Likes, {reposts:,} Reposts, {quotes:,} Quotes, {views:,} Views\n\n"
         markdown += "---\n\n"
         markdown += text
-        
+
         return markdown
 
     except tweepy.errors.NotFound:
         return f"Error: X post (ID: {tweet_id}) not found or may have been deleted."
     except Exception as e:
-        return f"Error accessing X API: {type(e).__name__} - {e}. Check your Bearer Token."
+        return (
+            f"Error accessing X API: {type(e).__name__} - {e}. Check your Bearer Token."
+        )
+
 
 def process_web_url(url, timeout=30):
     """
@@ -458,13 +476,3 @@ def url_to_markdown(url):
         return process_wikipedia_url(url)
     else:
         raise ValueError("Unknown URL type")
-    
-if __name__ == "__main__":
-    url = input("Enter a URL: ").strip()
-    try:
-        content = url_to_markdown(url)  # your dispatcher function
-        print("\n--- Extracted Content ---\n")
-        print(content[:1000])  # print first 1000 chars for readability
-    except Exception as e:
-        print(f"Error: {e}")
-

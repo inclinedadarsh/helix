@@ -64,7 +64,7 @@ class FirestoreHelper:
     def get_latest_processes(self, user_id: str, limit: int = 5):
         query = (
             self.db.collection("processes")
-            .where("user_id", "==", user_id)
+            .where(filter=firestore.FieldFilter("user_id", "==", user_id))
             .order_by("created_at", direction=firestore.Query.DESCENDING)
             .limit(limit)
         )
