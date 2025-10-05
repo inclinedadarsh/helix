@@ -3,19 +3,16 @@ import os
 import re
 from pathlib import Path
 
-logging.basicConfig(level=logging.INFO)
-
 from mcp.server.fastmcp import FastMCP
+
+logging.basicConfig(level=logging.INFO)
 
 mcp = FastMCP("local_tools")
 
-# Get uploads directory from environment variable, fallback to project root
-uploads_base = os.getenv("UPLOADS_BASE_DIR")
-if uploads_base:
-    BASE_DIR = Path(uploads_base)
-else:
-    # Fallback to project root (two levels up from src/utils)
-    BASE_DIR = Path(__file__).resolve().parents[2] / "uploads"
+# Uploads directory is one level up from project root (adjacent to project)
+BASE_DIR = (
+    Path(__file__).resolve().parents[3] / "uploads"
+)  # Go up 3 levels from src/utils/tools.py
 
 
 def get_user_dir() -> Path:
@@ -141,7 +138,7 @@ def grep(pattern: str, file_path: str | None = None) -> str:
 
         if not user_dir_resolved.exists():
             raise FileNotFoundError(
-                f"User directory does not exist. Please create it first."
+                "User directory does not exist. Please create it first."
             )
 
         for file in user_dir_resolved.rglob("*"):

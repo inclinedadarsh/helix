@@ -20,13 +20,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 def get_uploads_base_dir() -> Path:
-    """Get the uploads base directory from environment variable or fallback to default."""
-    uploads_base = os.getenv("UPLOADS_BASE_DIR")
-    if uploads_base:
-        return Path(uploads_base)
-    else:
-        # Fallback to project root (one level up from src)
-        return Path(__file__).resolve().parents[1] / "uploads"
+    """Get the uploads base directory (adjacent to project root)."""
+    # Uploads directory is one level up from project root (adjacent to project)
+    base_dir = Path(__file__).resolve().parents[2]  # Go up 2 levels from src/app.py
+    return base_dir / "uploads"
 
 
 app = FastAPI()
