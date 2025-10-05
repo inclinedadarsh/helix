@@ -24,3 +24,7 @@ class SearchResponse(BaseModel):
 class SingleLinkUploadRequest(BaseModel):
     link: str
     username: str
+
+
+class DeleteFileRequest(BaseModel):
+    file_name: str

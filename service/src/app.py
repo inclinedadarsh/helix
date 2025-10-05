@@ -14,6 +14,7 @@ from .schema import (
     SingleLinkUploadRequest,
     SearchRequest,
     SearchResponse,
+    DeleteFileRequest,
 )
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -257,6 +258,129 @@ async def download_file(
         filename=original_filename,
         media_type="application/octet-stream",
     )
+
+
+@app.delete("/files")
+async def delete_file(
+    request: DeleteFileRequest,
+    current_user: str = Depends(clerk.get_clerk_payload),
+):
+    """
+    Delete a file by name for the current user.
+    Removes .meta and .md files from processed directory and original file from original directory.
+    Request body should contain:
+    - file_name: name of the file without extension
+    """
+    try:
+        logger.info(
+            f"Delete file request received for user: {current_user}, file: {request.file_name}"
+        )
+
+        # Get base directories
+        base_dir = Path(__file__).resolve().parents[1] / "uploads" / current_user
+        processed_dir = base_dir / "processed"
+        original_dir = base_dir / "original"
+
+        logger.info(f"Base directory: {base_dir}")
+        logger.info(f"Processed directory exists: {processed_dir.exists()}")
+        logger.info(f"Original directory exists: {original_dir.exists()}")
+
+        deleted_files = []
+        found_any = False
+
+        # Categories to search in
+        categories = ["docs", "media", "links"]
+        logger.info(f"Searching in categories: {categories}")
+
+        # Search in processed directories for .meta and .md files
+        for category in categories:
+            category_processed_dir = processed_dir / category
+            logger.info(
+                f"Checking processed category '{category}': {category_processed_dir}"
+            )
+            logger.info(f"Category directory exists: {category_processed_dir.exists()}")
+
+            if category_processed_dir.exists():
+                # Look for .meta file
+                meta_file = category_processed_dir / f"{request.file_name}.meta"
+                logger.info(f"Looking for meta file: {meta_file}")
+                logger.info(f"Meta file exists: {meta_file.exists()}")
+
+                if meta_file.exists():
+                    meta_file.unlink()
+                    deleted_files.append(str(meta_file))
+                    found_any = True
+                    logger.info(f"Deleted meta file: {meta_file}")
+
+                # Look for .md file
+                md_file = category_processed_dir / f"{request.file_name}.md"
+                logger.info(f"Looking for markdown file: {md_file}")
+                logger.info(f"Markdown file exists: {md_file.exists()}")
+
+                if md_file.exists():
+                    md_file.unlink()
+                    deleted_files.append(str(md_file))
+                    found_any = True
+                    logger.info(f"Deleted markdown file: {md_file}")
+
+        # Search in original directories for the actual file
+        for category in categories:
+            category_original_dir = original_dir / category
+            logger.info(
+                f"Checking original category '{category}': {category_original_dir}"
+            )
+            logger.info(
+                f"Original category directory exists: {category_original_dir.exists()}"
+            )
+
+            if category_original_dir.exists():
+                # Look for files with the given name and any extension
+                pattern = f"{request.file_name}.*"
+                logger.info(
+                    f"Searching for pattern: {pattern} in {category_original_dir}"
+                )
+                matching_files = list(category_original_dir.glob(pattern))
+                logger.info(
+                    f"Found {len(matching_files)} matching files: {matching_files}"
+                )
+
+                for file_path in matching_files:
+                    logger.info(f"Deleting original file: {file_path}")
+                    file_path.unlink()
+                    deleted_files.append(str(file_path))
+                    found_any = True
+                    logger.info(f"Successfully deleted original file: {file_path}")
+
+        logger.info(f"Total files found and deleted: {len(deleted_files)}")
+        logger.info(f"Found any files: {found_any}")
+
+        if not found_any:
+            logger.warning(
+                f"No files found with name '{request.file_name}' for user '{current_user}'"
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=f"No file found with name '{request.file_name}' for user '{current_user}'",
+            )
+
+        logger.info(
+            f"Successfully deleted {len(deleted_files)} files for user {current_user}"
+        )
+        logger.info(f"Deleted files list: {deleted_files}")
+
+        return {
+            "message": f"Successfully deleted file '{request.file_name}'",
+            "deleted_files": deleted_files,
+            "count": len(deleted_files),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Error deleting file '{request.file_name}' for user {current_user}: {str(e)}"
+        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/search", response_model=SearchResponse)
