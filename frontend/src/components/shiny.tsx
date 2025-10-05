@@ -45,7 +45,7 @@ const randomIconPositions = [
   {
     icon: "youtube",
     x: "15%",
-    y: "15%",
+    y: "10%",
     scale: 0.8,
     rotation: -15,
     reverse: false,
@@ -76,9 +76,9 @@ const randomIconPositions = [
   },
   {
     icon: "audio",
-    x: "20%",
-    y: "35%",
-    scale: 0.9,
+    x: "18%",
+    y: "20%",
+    scale: 0.7,
     rotation: -20,
     reverse: false,
   },
@@ -110,7 +110,7 @@ const randomIconPositions = [
   {
     icon: "slides",
     x: "75%",
-    y: "40%",
+    y: "30%",
     scale: 0.8,
     rotation: 10,
     reverse: true,
@@ -210,7 +210,7 @@ export function HelixSupportSystem() {
           toRef={helixRef}
           delay={Math.random() * 3 + 3}
           duration={Math.random() * 3 + 7}
-          pathColor="#94a3b8"
+          pathColor="#c7ccd4"
           reverse={pos.reverse}
           gradientStartColor="#FFF200"
           gradientStopColor="#FF5400"
