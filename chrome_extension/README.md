@@ -11,7 +11,10 @@
 
 ### 1. Purpose
 
-![Helix Logo](./assets/helix_logo.png) 
+<p align="center">
+  <img src="./helix_logo.png" alt="Helix Logo" width="250"/>
+</p>
+
 
 The Helix Chrome Extension is designed to ensure seamless and passive knowledge acquisition. It allows users to capture context from any web page and instantly pipe it into their Helix Memory Library.
 
