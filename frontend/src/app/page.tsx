@@ -30,7 +30,7 @@ export default function Home() {
         <HelixSupportSystem />
 
         <Link
-          href="#"
+          href="https://youtu.be/q812NCfpZqg"
           target="_blank"
           rel="noopener noreferrer"
           className="bg-gradient-to-b from-white to-gray-100 flex gap-2 mt-24 mb-16 border border-border rounded-lg px-2 py-1 text-sm items-center z-20 shadow-sm hover:bg-gray-50 transition-colors group"
