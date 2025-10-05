@@ -1,0 +1,35 @@
+registry:
+  helix:
+    title: "Helix MCP"
+    description: "Retrieve personalized context and knowledge about the user to better answer their questions. Provides AI assistants with access to user's data, preferences, history, and personal context for more accurate and relevant responses."
+    type: "remote-server"
+    version: "1.0.0"
+    homepage: "https://github.com/inclinedadarsh/helix"
+    
+    endpoint: "https://helix-mcp-server.borse-aditya7.workers.dev/mcp"
+    transport: "sse"
+    
+    oauth:
+      provider: "github"
+      required: true
+      scopes:
+        - "read:user"
+        - "user:email"
+    
+    tools:
+      - name: "helix"
+        description: "Retrieve personalized context and knowledge about the user"
+        input_schema:
+          type: "object"
+          properties:
+            query:
+              type: "string"
+              description: "The question or context you need about the user to answer their request"
+          required:
+            - "query"
+    
+    env:
+      SEARCH_API_URL:
+        description: "URL of the search API backend"
+        default: "https://server.helix-llm.app/search"
+        required: false

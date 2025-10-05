@@ -124,7 +124,7 @@ export class MyMCP extends McpAgent<Env, Record<string, never>, Props> {
 	}
 }
 
-export default new OAuthProvider({
+const provider = new OAuthProvider({
 	apiHandlers: {
 		"/sse": MyMCP.serveSSE("/sse"), 
 		"/mcp": MyMCP.serve("/mcp"),
@@ -134,3 +134,31 @@ export default new OAuthProvider({
 	defaultHandler: GitHubHandler as any,
 	tokenEndpoint: "/token",
 });
+
+export default {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		if (request.method === 'OPTIONS') {
+			return new Response(null, {
+				headers: {
+					'Access-Control-Allow-Origin': '*',
+					'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+					'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+					'Access-Control-Max-Age': '86400'
+				}
+			});
+		}
+
+		const response = await provider.fetch(request, env, ctx);
+		
+		const headers = new Headers(response.headers);
+		headers.set('Access-Control-Allow-Origin', '*');
+		headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+		headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+		
+		return new Response(response.body, {
+			status: response.status,
+			statusText: response.statusText,
+			headers
+		});
+	}
+} satisfies ExportedHandler<Env>;
