@@ -52,7 +52,7 @@ const randomIconPositions = [
   },
   {
     icon: "github",
-    x: "85%",
+    x: "70%",
     y: "10%",
     scale: 0.9,
     rotation: 20,
@@ -109,9 +109,9 @@ const randomIconPositions = [
   },
   {
     icon: "slides",
-    x: "75%",
-    y: "30%",
-    scale: 0.8,
+    x: "70%",
+    y: "22%",
+    scale: 0.7,
     rotation: 10,
     reverse: true,
   },

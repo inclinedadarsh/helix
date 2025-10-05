@@ -10,6 +10,7 @@ import { HelixSupportSystem } from "@/components/shiny";
 import { SignedIn, SignedOut, SignUpButton } from "@clerk/nextjs";
 import { AuroraText } from "@/components/ui/aurora-text";
 import Features from "@/components/features";
+import { DemoVideo } from "@/components/demo-video";
 
 export default function Home() {
   return (
@@ -50,9 +51,11 @@ export default function Home() {
           </AuroraText>
           for your LLM!
         </h1>
-        <p className="font-medium text-gray-800 z-20 mt-16 max-w-2xl text-center">
-          Drop your files and links, and your LLM will never lose context. Some
-          Drop your files and links, and your LLM will never lose context.
+        <p className="font-medium text-gray-800 z-20 mt-10 max-w-2xl text-center text-pretty">
+          Drop your files and links, and Helix ensures your LLM never forgets.
+          Super-fast indexing with Cerebras, smart context from Llama, and
+          seamless Docker MCP integration keep your AI sharp and always on
+          point.
         </p>
         <SignedOut>
           <SignUpButton mode="modal">
@@ -80,6 +83,7 @@ export default function Home() {
         </SignedIn>
       </header>
       <Features />
+      <DemoVideo />
     </main>
   );
 }
