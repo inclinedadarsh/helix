@@ -11,6 +11,7 @@ import { SignedIn, SignedOut, SignUpButton } from "@clerk/nextjs";
 import { AuroraText } from "@/components/ui/aurora-text";
 import Features from "@/components/features";
 import { DemoVideo } from "@/components/demo-video";
+import CTA from "@/components/cta";
 
 export default function Home() {
   return (
@@ -84,6 +85,7 @@ export default function Home() {
       </header>
       <Features />
       <DemoVideo />
+      <CTA />
     </main>
   );
 }
