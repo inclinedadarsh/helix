@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import List
@@ -24,9 +25,14 @@ if not logger.handlers:
 class ProcessHelper:
     def __init__(self, db: FirestoreHelper):
         self.db = db
-        # Resolve uploads directory at project root (one level up from src)
-        base_dir = Path(__file__).resolve().parents[2]
-        self._uploads_dir = base_dir / "uploads"
+        # Get uploads directory from environment variable, fallback to project root
+        uploads_base = os.getenv("UPLOADS_BASE_DIR")
+        if uploads_base:
+            self._uploads_dir = Path(uploads_base)
+        else:
+            # Fallback to project root (one level up from src)
+            base_dir = Path(__file__).resolve().parents[2]
+            self._uploads_dir = base_dir / "uploads"
         self._media_extensions = {"mp4", "mp3"}
         self.ai_helper = AIHelper()
 

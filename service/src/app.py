@@ -18,6 +18,17 @@ from .schema import (
 )
 from fastapi.middleware.cors import CORSMiddleware
 
+
+def get_uploads_base_dir() -> Path:
+    """Get the uploads base directory from environment variable or fallback to default."""
+    uploads_base = os.getenv("UPLOADS_BASE_DIR")
+    if uploads_base:
+        return Path(uploads_base)
+    else:
+        # Fallback to project root (one level up from src)
+        return Path(__file__).resolve().parents[1] / "uploads"
+
+
 app = FastAPI()
 db = FirestoreHelper()
 clerk = ClerkHelper()
@@ -156,9 +167,7 @@ def get_recent_processes(current_user: str = Depends(clerk.get_clerk_payload)):
 
 @app.get("/files/processed")
 def get_processed_files(current_user: str = Depends(clerk.get_clerk_payload)):
-    base_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "uploads", current_user, "processed"
-    )
+    base_dir = get_uploads_base_dir() / current_user / "processed"
 
     categories = {
         "docs": [],
@@ -167,15 +176,14 @@ def get_processed_files(current_user: str = Depends(clerk.get_clerk_payload)):
     }
 
     for category in categories.keys():
-        category_dir = os.path.join(base_dir, category)
-        if not os.path.isdir(category_dir):
+        category_dir = base_dir / category
+        if not category_dir.is_dir():
             continue
         try:
-            for entry in os.listdir(category_dir):
-                if entry.endswith(".meta"):
-                    meta_path = os.path.join(category_dir, entry)
+            for entry in category_dir.iterdir():
+                if entry.name.endswith(".meta"):
                     try:
-                        with open(meta_path, "r") as f:
+                        with open(entry, "r") as f:
                             data = json.load(f)
                             categories[category].append(data)
                     except Exception:
@@ -197,14 +205,12 @@ async def download_file(
     - file_name: name of the file without extension
     - file_type: either "docs" or "media"
     """
-    uploads_base_dir = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "uploads", current_user
-    )
+    uploads_base_dir = get_uploads_base_dir() / current_user
 
     # Check metadata in processed directory
-    processed_dir = os.path.join(uploads_base_dir, "processed")
+    processed_dir = uploads_base_dir / "processed"
     # Get actual files from original directory
-    original_dir = os.path.join(uploads_base_dir, "original")
+    original_dir = uploads_base_dir / "original"
 
     # Validate file type
     if request.file_type not in ["docs", "media"]:
@@ -213,30 +219,30 @@ async def download_file(
         )
 
     # Check if metadata exists in processed directory
-    processed_search_dir = os.path.join(processed_dir, request.file_type)
-    if not os.path.isdir(processed_search_dir):
+    processed_search_dir = processed_dir / request.file_type
+    if not processed_search_dir.is_dir():
         raise HTTPException(
             status_code=404, detail=f"No {request.file_type} directory found"
         )
 
     # Look for metadata file to confirm the file exists
-    meta_pattern = os.path.join(processed_search_dir, f"{request.file_name}.meta")
-    if not os.path.exists(meta_pattern):
+    meta_pattern = processed_search_dir / f"{request.file_name}.meta"
+    if not meta_pattern.exists():
         raise HTTPException(
             status_code=404,
             detail=f"No file found with name '{request.file_name}' in {request.file_type} directory",
         )
 
     # Now look for the actual file in original directory
-    original_search_dir = os.path.join(original_dir, request.file_type)
-    if not os.path.isdir(original_search_dir):
+    original_search_dir = original_dir / request.file_type
+    if not original_search_dir.is_dir():
         raise HTTPException(
             status_code=404,
             detail=f"No {request.file_type} directory found in original folder",
         )
 
     # Search for files with the given name (without extension) in original directory
-    pattern = os.path.join(original_search_dir, f"{request.file_name}.*")
+    pattern = str(original_search_dir / f"{request.file_name}.*")
     matching_files = glob.glob(pattern)
 
     if not matching_files:
@@ -249,7 +255,7 @@ async def download_file(
     file_path = matching_files[0]
 
     # Get the original filename for the download
-    original_filename = os.path.basename(file_path)
+    original_filename = Path(file_path).name
 
     logger.info(f"Downloading file: {file_path}")
 
@@ -277,7 +283,7 @@ async def delete_file(
         )
 
         # Get base directories
-        base_dir = Path(__file__).resolve().parents[1] / "uploads" / current_user
+        base_dir = get_uploads_base_dir() / current_user
         processed_dir = base_dir / "processed"
         original_dir = base_dir / "original"
 
@@ -396,9 +402,7 @@ async def search(
     try:
         logger.info(f"Search request received from user: {user_id}")
 
-        base_dir = (
-            Path(__file__).resolve().parents[1] / "uploads" / user_id / "processed"
-        )
+        base_dir = get_uploads_base_dir() / user_id / "processed"
         for subdirectory in ["links", "docs", "media"]:
             dir_path = base_dir / subdirectory
             dir_path.mkdir(parents=True, exist_ok=True)
