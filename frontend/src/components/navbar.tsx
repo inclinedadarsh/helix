@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 import Image from "next/image";
 import Link from "next/link";
-import { Button, buttonVariants } from "./ui/button";
+import { Button } from "./ui/button";
 import {
   SignedIn,
   SignedOut,
@@ -16,26 +16,26 @@ import { Blocks } from "lucide-react";
 const Navbar = () => {
   return (
     <nav className="flex justify-between items-center max-w-7xl mx-auto mt-5 mb-2">
-      <Image src={helixLogo} alt="Helix Logo" className="w-32" />
+      <div className="flex items-center gap-6">
+        <Image src={helixLogo} alt="Helix Logo" className="w-32 mr-8" />
+        <Link
+          href="https://github.com/inclinedadarsh/helix/tree/main/chrome_extension"
+          className={cn(
+            "uppercase font-mono tracking-wide flex gap-2 items-center font-medium text-sm px-2 py-1 rounded-md hover:bg-gray-100 transition-colors",
+          )}
+        >
+          <Blocks size={16} /> Install Extension
+        </Link>
+        <Link
+          href="https://github.com/inclinedadarsh/helix"
+          className={cn(
+            "uppercase font-mono tracking-wide flex gap-2 items-center font-medium text-sm px-2 py-1 rounded-md hover:bg-gray-100 transition-colors",
+          )}
+        >
+          <SiGithub size={16} /> GitHub
+        </Link>
+      </div>
       <div className="flex gap-4 items-center">
-        <Link
-          href="/"
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "font-bold uppercase font-mono tracking-wide",
-          )}
-        >
-          <Blocks /> Install Extension
-        </Link>
-        <Link
-          href="/"
-          className={cn(
-            buttonVariants({ variant: "outline" }),
-            "font-bold uppercase font-mono tracking-wide",
-          )}
-        >
-          <SiGithub /> GitHub
-        </Link>
         <SignedOut>
           <SignInButton mode="modal">
             <Button
