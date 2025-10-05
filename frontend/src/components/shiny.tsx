@@ -180,14 +180,14 @@ export function HelixSupportSystem() {
       ))}
 
       {/* Helix logo positioned below the dashboard button area */}
-      <div className="absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+      <div className="absolute top-[80%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
         <Circle ref={helixRef} className="size-20">
           <Icons.helix />
         </Circle>
       </div>
 
       {/* Bottom three logos positioned below Helix logo with more spacing */}
-      <div className="absolute top-[80%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+      <div className="absolute top-[100%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
         <div className="flex flex-row items-center justify-center gap-16">
           <Circle ref={copilotRef}>
             <Icons.githubcopilot />

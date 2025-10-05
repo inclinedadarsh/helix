@@ -3,19 +3,19 @@
 import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { DotPattern } from "@/components/ui/dot-pattern";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import Navbar from "@/components/navbar";
 import { HelixSupportSystem } from "@/components/shiny";
 import { SignedIn, SignedOut, SignUpButton } from "@clerk/nextjs";
 import { AuroraText } from "@/components/ui/aurora-text";
+import Features from "@/components/features";
 
 export default function Home() {
   return (
     <main className="">
       <Navbar />
-      <header className="bg-background relative flex h-[900px] w-full flex-col items-center rounded-lg">
+      <header className="bg-background relative flex h-[650px] w-full flex-col items-center rounded-lg">
         {/* <DotPattern
           className={cn(
             "[mask-image:radial-gradient(300px_circle_at_center,white,transparent)] ",
@@ -43,7 +43,11 @@ export default function Home() {
           {/* <span className="bg-gradient-to-br from-blue-500 to-blue-700 pl-4 pr-1 py-2 rounded-lg text-white shadow-lg">
             L1 Cache⚡
           </span>{" "} */}
-          <AuroraText>L1 Cache⚡</AuroraText>
+          <AuroraText
+            colors={["#FFF200", "#FFD166", "#FFA62B", "#FF7A00", "#FF5400"]}
+          >
+            L1 Cache⚡
+          </AuroraText>
           for your LLM!
         </h1>
         <p className="font-medium text-gray-800 z-20 mt-16 max-w-2xl text-center">
@@ -75,7 +79,7 @@ export default function Home() {
           </Link>
         </SignedIn>
       </header>
-      <div className="h-[400px]"></div>
+      <Features />
     </main>
   );
 }
