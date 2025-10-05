@@ -5,7 +5,7 @@ import { AuroraText } from "@/components/ui/aurora-text";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import { cerebrasLogo, dockerLogo, metaLogo } from "@/assets";
-import { StaticImageData } from "next/image";
+import type { StaticImageData } from "next/image";
 
 export default function Features() {
   return (
@@ -27,8 +27,8 @@ export default function Features() {
 
           {/* Card 2 */}
           <FeatureCard
-            title="Upload Once, Use Anywhere"
-            description="With the Docker MCP Gateway, connect your files to any LLM. One upload. Many agents. Zero friction."
+            title="Run Securely"
+            description="Access* our MCP server through the Docker MCP Gateway—keeps your data secure and your privacy protected always."
             logo={{ src: dockerLogo as StaticImageData, alt: "Docker" }}
             shineColors={["#A07CFE", "#FE8FB5", "#FFBE7B"]}
           />

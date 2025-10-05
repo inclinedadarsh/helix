@@ -29,6 +29,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import confetti from "canvas-confetti";
 
 type DocItem = {
   old_name: string;
@@ -327,6 +328,34 @@ export default function Dashboard() {
 
       {!loading && data && (
         <div className="space-y-10">
+          <section>
+            <h2 className="text-xl font-semibold mb-4">MCP Server</h2>
+            <div className="pl-4 pr-2 py-2 border rounded-lg flex items-center gap-3">
+              <div className="flex-1 overflow-hidden">
+                <p className="font-medium">
+                  https://helix-mcp-server.borse-aditya7.workers.dev/mcp
+                </p>
+              </div>
+              <button
+                type="button"
+                className={cn(buttonVariants({ variant: "outline" }))}
+                onClick={() => {
+                  const url =
+                    "https://helix-mcp-server.borse-aditya7.workers.dev/mcp";
+                  navigator.clipboard.writeText(url).then(() => {
+                    confetti({
+                      particleCount: 150,
+                      spread: 70,
+                      origin: { y: 0.7 },
+                    });
+                  });
+                }}
+              >
+                Copy
+              </button>
+            </div>
+          </section>
+
           <section>
             <h2 className="text-xl font-semibold mb-4">Files</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
