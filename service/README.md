@@ -27,11 +27,11 @@ The Helix Backend Service is a FastAPI-based backend that powers the Helix knowl
 
 ## System Architecture
 
-![backend architecture](readme-images/backend.png)
+![backend architecture](../assets/backend.png)
 
 ## Multi-Agent Search System
 
-![agents architecture](readme-images/agents.png)
+![agents architecture](../assets/agents.png)
 
 ## User Uploaded Files Directory Structure
 
