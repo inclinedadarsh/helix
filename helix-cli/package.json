@@ -1,0 +1,24 @@
+{
+  "name": "@helixlabs/mcp",
+  "version": "1.0.0",
+  "description": "CLI tool to setup Helix MCP server",
+  "main": "index.js",
+  "bin": {
+    "helixlabs-mcp": "./index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "mcp",
+    "cursor",
+    "helix",
+    "cli"
+  ],
+  "author": "Adarsh Dubey",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}
