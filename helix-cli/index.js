@@ -77,6 +77,7 @@ function addServerToConfig(configPath, editorName) {
         console.log(`✓ Successfully added Helix MCP server to ${editorName}!`);
         console.log(`\nConfig location: ${configPath}`);
         console.log(`\nPlease restart ${editorName} to apply changes.`);
+        console.log("\nPlease go to the MCP Servers tab and authenticate with your GitHub account.");
     } catch (error) {
         console.error(`✗ Error writing config: ${error.message}`);
         process.exit(1);
